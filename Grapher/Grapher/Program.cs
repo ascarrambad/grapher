@@ -13,7 +13,7 @@ namespace Grapher {
         static void Main() {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new FormTest());
+            Application.Run(new Form1());
         }
     }
 }
