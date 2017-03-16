@@ -9,27 +9,23 @@ namespace Grapher {
     static class DataAnalysis {
 
         // Module
-        // return modarr[pacchetto,sensore,tipo(0:acc,1:gyr)]
+        // double[,] data: [numero pacchetto, (x,y,z)]
+        // return modarr[numero pacchetto]: array di moduli
 
-        public static double[,,] ComputeModules(List<Packet> sampwin) {
-            int sensNum = sampwin.First().SensorsNumber;
-            int dim = sampwin.Count * sensNum * 3;
+        public static double[] ComputeModules(double[,] data) {
+            int size = data.GetLength(0);
 
-            double[,,] modarr = new double[sampwin.Count,sensNum,2];
+            double[] modarr = new double[size];
 
-            for (int i = 0; i < sampwin.Count; i++) {
-                for(int j = 0; j < sensNum; j++) {
-                    Sensor s = sampwin[i].Sensors[j];
-                    modarr[i, j, 0] = ComputeModule(s.acc[0], s.acc[1], s.acc[2]);
-                    modarr[i, j, 1] = ComputeModule(s.gyr[0], s.gyr[1], s.gyr[2]);
-                }
+            for (int i = 0; i < size; i++) {
+                modarr[i] = ComputeModule(data[i, 0], data[i, 1], data[i, 2]);
             }
 
             return modarr;
         }
 
         private static double ComputeModule(double x, double y, double z) {
-            return Math.Sqrt(Math.Pow(x,2) + Math.Pow(y, 2) + Math.Pow(z, 2));
+            return Math.Sqrt(Math.Pow(x, 2) + Math.Pow(y, 2) + Math.Pow(z, 2));
         }
 
         // Smoothing
@@ -40,7 +36,7 @@ namespace Grapher {
             int sensNum = sampwin.First().SensorsNumber;
 
             List<Packet> smoothed = new List<Packet>();
-            
+
             for (int p = 0; p < size; p++) {
                 Packet pa = new Packet();
                 pa.SensorsNumber = sensNum;
@@ -74,17 +70,52 @@ namespace Grapher {
                     }
 
                     for (int i = 0; i < 3; i++) {
-                        pa.Sensors[s].acc[i] = accmean[i] / num;
-                        pa.Sensors[s].gyr[i] = gyrmean[i] / num;
-                        pa.Sensors[s].mag[i] = magmean[i] / num;
-                        pa.Sensors[s].q[i] = qmean[i] / num;
+                        pa.Sensors[s].acc[i] = accmean[i] / (double)num;
+                        pa.Sensors[s].gyr[i] = gyrmean[i] / (double)num;
+                        pa.Sensors[s].mag[i] = magmean[i] / (double)num;
+                        pa.Sensors[s].q[i] = qmean[i] / (double)num;
                     }
-                    pa.Sensors[s].q[3] = qmean[3] / num;
+                    pa.Sensors[s].q[3] = qmean[3] / (double)num;
                 }
             }
 
             return smoothed;
         }
 
+        // Derivative
+        // return modarr[pacchetto,sensore,tipo(0:acc,1:gyr)]
+
+        public static double[] ComputeDerivatives(double[] mod, int freq) {
+            int size = mod.Count();
+            double[] derivated = new double[size];
+
+            for (int i = 0; i < size - 1; i++) {
+                derivated[i] = ComputeDerivative(freq, mod[i], mod[i + 1]);
+            }
+            return derivated;
+        }
+
+        private static double ComputeDerivative(int freq, double v1, double v2) {
+            return (v1 - v2) / ((double)1 / freq);
+        }
+
+        // Standard Deviation
+
+        public static double[] ComputeStandardDeviation(double[] mod, int range) {
+            int size = mod.Count();
+            double[] derivated = new double[size];
+
+            for (int i = 0; i < size - 1; i++) {
+
+                int sx = Math.Max(0, i - range);
+                int dx = Math.Min(size - 1, i + range);
+                int num = dx - sx + 1;
+
+                for (int j = sx; j < dx; j++) {
+
+                }
+            }
+            return derivated;
+        }
     }
 }
