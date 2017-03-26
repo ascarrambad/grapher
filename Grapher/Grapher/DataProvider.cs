@@ -8,16 +8,19 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Grapher {
+namespace Grapher
+{
 
-    public struct Sensor {
+    public struct Sensor
+    {
         public double[] acc;
         public double[] gyr;
         public double[] mag;
         public double[] q;
     }
 
-    public struct Packet {
+    public struct Packet
+    {
         public byte BID;
         public byte MID;
         public byte len;
@@ -33,7 +36,8 @@ namespace Grapher {
 
     public delegate void DataProviderSampleWindow(List<Packet> samplewin);
 
-    class DataProvider {
+    class DataProvider
+    {
 
         private Int32 port;
         private IPAddress localAddr;
@@ -51,58 +55,115 @@ namespace Grapher {
         public int Window { get => window; }
         public int Frequence { get => frequence; }
 
+        Controller.printToServerConsoleDelegate printToServerConsole;
+        Controller.setButtonServerStartDelegate setButtonServerStart;
         public DataProviderSampleWindow samplewinDelegate;
 
-        public DataProvider() : this(45555, "127.0.0.1") { }
+        /*public DataProvider() : this(45555, "127.0.0.1") { }
 
-        public DataProvider(Int32 port, String localAddr) : this(port, localAddr, 50, 10) { }
+        public DataProvider(Int32 port, String localAddr) : this(port, localAddr, 50, 10) { }*/
 
-        public DataProvider(Int32 port, String localAddr, int frequence, int window) {
-            try {
+        public DataProvider(Int32 port, String localAddr, int frequence, int window, Controller.printToServerConsoleDelegate printToServerConsoleFunc, Controller.setButtonServerStartDelegate setButtonServerStartFunc)
+        {
+            try
+            {
                 ChangeFrequenceAndWindow(frequence, window);
                 SetAddressAndPort(port, localAddr);
-                this.server.Start();
-            } catch {
+                //this.server.Start(); non devo farlo partire durante la creazione, ma al click di start
+            }
+            catch
+            {
                 throw;
             }
+
+            printToServerConsole = printToServerConsoleFunc;
+            setButtonServerStart = setButtonServerStartFunc;
+            setButtonServerStart(isActive);
         }
 
-        public void ChangeFrequenceAndWindow(int frequence, int window) {
+        public void ChangeFrequenceAndWindow(int frequence, int window)
+        {
             this.frequence = frequence;
             this.window = window;
         }
 
-        public void ChangeAddressAndPort(Int32 port, String localAddr) {
+        public void ChangeAddressAndPort(Int32 port, String localAddr)
+        {
             Stop();
             SetAddressAndPort(port, localAddr);
         }
 
-        private void SetAddressAndPort(Int32 port, String localAddr) {
-            try {
+        private void SetAddressAndPort(Int32 port, String localAddr)
+        {
+            try
+            {
                 this.port = port;
                 this.localAddr = IPAddress.Parse(localAddr);
                 this.server = new TcpListener(this.localAddr, port);
-                this.isActive = true;
+                this.isActive = false;
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 MessageBox.Show("IP Addressing Error!\n" + ex.Message);
                 this.isActive = false;
                 throw;
             }
         }
 
-        public void AcceptConnection() {
-            client = server.AcceptTcpClient();
-            ReceiveData();
+        public void AcceptConnection()
+        {
+            while(true) // qunado il thread separato viene chiamato deve rimanere sempre in ascolto
+            {
+                if (isActive)
+                {
+                    
+
+                        server.Start();
+                        printToServerConsole(String.Format("Server Started on port {0} at IP {1}\n", port, localAddr));
+                        while (isActive)
+                        {
+                            printToServerConsole("Waiting for a connection...\n");
+                            client = server.AcceptTcpClient();
+                            printToServerConsole("Connected!\n");
+                            ReceiveData();
+                        }
+                    
+
+                }
+                
+            }
+            
         }
 
-        public void Stop() {
-            this.client.Close();
+      
+		public void ActivateServer(int p, string ip)
+        {
+          
+            //Proviamo a parsare le informazioni per istanziare il server
+            try
+            {
+                localAddr = IPAddress.Parse(ip);
+                server = new TcpListener(localAddr, p);
+                isActive = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("IP Addressing Error!\n" + ex.Message);
+                isActive = false;
+            }
+            setButtonServerStart(isActive);
+        }
+
+        public void Stop()
+        {
+            //this.client.Close(); non viene istanziato
             this.server.Stop();
+            setButtonServerStart(isActive);
             this.isActive = false;
         }
 
-        private void ReceiveData() {
+        private void ReceiveData()
+        {
             NetworkStream stream = client.GetStream();
             BinaryReader bin = new BinaryReader(stream);
 
@@ -116,14 +177,15 @@ namespace Grapher {
             bool isExtLen;
             int dataLength;
             int sensorsNumber;
-            
+
             bid = 0xFF;
             mid = 0x32;
 
             byte[] pream = new byte[3];
 
             // cerca la sequenza FF-32
-            while (!(pream[0] == 0xFF && pream[1] == 0x32)) {
+            while (!(pream[0] == 0xFF && pream[1] == 0x32))
+            {
                 pream[0] = pream[1];
                 pream[1] = pream[2];
                 byte[] read = bin.ReadBytes(1);
@@ -134,9 +196,12 @@ namespace Grapher {
             isExtLen = pream[2] == 0xFF;
 
             // modalità normale
-            if (!isExtLen) {
+            if (!isExtLen)
+            {
                 dataLength = pream[2];
-            } else {
+            }
+            else
+            {
                 // modalità extended-length
                 byte[] tmp = new byte[2];
                 tmp = bin.ReadBytes(2);
@@ -149,7 +214,8 @@ namespace Grapher {
 
             byte[] rawData = bin.ReadBytes(dataLength + 1); // lettura dei dati
 
-            while (this.isActive && rawData.Count() != 0) {
+            while (this.isActive && rawData.Count() != 0)
+            {
 
                 Packet packet = new Packet();
                 packet.BID = bid;
@@ -162,7 +228,8 @@ namespace Grapher {
                 packet.SensorsNumber = sensorsNumber;
                 packet.Sensors = new Sensor[sensorsNumber];
 
-                for (int i = 0; i < sensorsNumber; i++) {
+                for (int i = 0; i < sensorsNumber; i++)
+                {
                     packet.Sensors[i].acc = new double[3];
                     packet.Sensors[i].gyr = new double[3];
                     packet.Sensors[i].mag = new double[3];
@@ -173,13 +240,17 @@ namespace Grapher {
                 samplewin.Add(packet);
 
                 int campNum = window * frequence;
-                if (samplewin.Count % (campNum / 2) == 0 && samplewin.Count >= campNum) {
+                if (samplewin.Count % (campNum / 2) == 0 && samplewin.Count >= campNum)
+                {
                     samplewinDelegate(samplewin);
                 }
 
-                if (!isExtLen) {
+                if (!isExtLen)
+                {
                     bin.ReadBytes(3);
-                } else {
+                }
+                else
+                {
                     bin.ReadBytes(5);
                 }
 
@@ -188,18 +259,24 @@ namespace Grapher {
             samplewinDelegate(samplewin);
         }
 
-        private Packet ParsePacket(Packet packet, byte[] rawData) {
-            for (int i = 0; i < packet.SensorsNumber; i++) {
-                for (int j = 0; j < 13; j++) {
+        private Packet ParsePacket(Packet packet, byte[] rawData)
+        {
+            for (int i = 0; i < packet.SensorsNumber; i++)
+            {
+                for (int j = 0; j < 13; j++)
+                {
                     byte[] tmp = new byte[4];
                     int k = i * 52 + j * 4;
 
-                    if (packet.SensorsNumber < 5) {
+                    if (packet.SensorsNumber < 5)
+                    {
                         tmp[0] = rawData[k + 3]; // lettura inversa
                         tmp[1] = rawData[k + 2];
                         tmp[2] = rawData[k + 1];
                         tmp[3] = rawData[k];
-                    } else {
+                    }
+                    else
+                    {
                         tmp[0] = rawData[k + 5];
                         tmp[1] = rawData[k + 4];
                         tmp[2] = rawData[k + 3];
@@ -208,13 +285,20 @@ namespace Grapher {
 
                     double value = BitConverter.ToSingle(tmp, 0);
 
-                    if (j < 3) {
+                    if (j < 3)
+                    {
                         packet.Sensors[i].acc[j] = value;
-                    } else if (j < 6) {
+                    }
+                    else if (j < 6)
+                    {
                         packet.Sensors[i].gyr[j - 3] = value;
-                    } else if (j < 9) {
+                    }
+                    else if (j < 9)
+                    {
                         packet.Sensors[i].mag[j - 6] = value;
-                    } else {
+                    }
+                    else
+                    {
                         packet.Sensors[i].q[j - 9] = value;
                     }
                 }
