@@ -34,7 +34,9 @@ namespace Grapher
         public Sensor[] Sensors;
     }
 
+    public delegate void DataProviderServerStarted();
     public delegate void DataProviderSampleWindow(List<Packet> samplewin);
+    public delegate void DataProviderServerStopped();
 
     class DataProvider
     {
@@ -55,30 +57,26 @@ namespace Grapher
         public int Window { get => window; }
         public int Frequence { get => frequence; }
 
-        Controller.printToServerConsoleDelegate printToServerConsole;
-        Controller.setButtonServerStartDelegate setButtonServerStart;
         public DataProviderSampleWindow samplewinDelegate;
+        public DataProviderServerStarted startDelegate;
+        public DataProviderServerStopped stopDelegate;
 
-        /*public DataProvider() : this(45555, "127.0.0.1") { }
+        public DataProvider() : this(45555, "127.0.0.1") { }
 
-        public DataProvider(Int32 port, String localAddr) : this(port, localAddr, 50, 10) { }*/
+        public DataProvider(Int32 port, String localAddr) : this(port, localAddr, 50, 10) { }
 
-        public DataProvider(Int32 port, String localAddr, int frequence, int window, Controller.printToServerConsoleDelegate printToServerConsoleFunc, Controller.setButtonServerStartDelegate setButtonServerStartFunc)
+        public DataProvider(Int32 port, String localAddr, int frequence, int window)
         {
             try
             {
                 ChangeFrequenceAndWindow(frequence, window);
                 SetAddressAndPort(port, localAddr);
-                //this.server.Start(); non devo farlo partire durante la creazione, ma al click di start
+                this.isActive = false;
             }
             catch
             {
                 throw;
             }
-
-            printToServerConsole = printToServerConsoleFunc;
-            setButtonServerStart = setButtonServerStartFunc;
-            setButtonServerStart(isActive);
         }
 
         public void ChangeFrequenceAndWindow(int frequence, int window)
@@ -100,7 +98,7 @@ namespace Grapher
                 this.port = port;
                 this.localAddr = IPAddress.Parse(localAddr);
                 this.server = new TcpListener(this.localAddr, port);
-                this.isActive = false;
+                this.server.Start();
             }
             catch (Exception ex)
             {
@@ -112,199 +110,128 @@ namespace Grapher
 
         public void AcceptConnection()
         {
-            while(true) // qunado il thread separato viene chiamato deve rimanere sempre in ascolto
+            // gestire il qualche modo l'overflow
+            try
             {
-                if (isActive)
-                {
-                   
-                    try
-                    {
-                        server.Start();
-                        printToServerConsole(String.Format("Server Started on port {0} at IP {1}\n", port, localAddr));
-                        while (isActive)
-                        {
-                            printToServerConsole("Waiting for a connection...\n");
-
-                            try
-                            {
-                                client = server.AcceptTcpClient();
-                                printToServerConsole("Connected!\n");
-                                ReceiveData();
-                            }
-                            catch (InvalidOperationException e)
-                            {
-                                throw new InvalidOperationException("Client conection error.\n" + e.Message);
-                            }
-
-                            catch (SocketException e)
-                            {
-                                throw;
-                            }
-
-                        }
-                    }
-                    catch (ObjectDisposedException ex)
-                    {
-                        MessageBox.Show(ex.Message);
-                    }
-                    catch (InvalidOperationException ex)
-                    {
-                        MessageBox.Show(ex.Message);
-                    }
-                    catch (SocketException ex)
-                    {
-                        //Ignora questa eccezione: vuol dire che è stata effettuata una chiamata bloccante da parte dell'utente.
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Generic error caught! (This error shouldn't occur)\n"
-                            + "Exception thrown in " + ex.TargetSite + "\n"
-                            + "\n\n" + ex.ToString()
-                        );
-                    }
-                    finally
-                    {
-                        //Stop listening for new clients.
-                        //Server Stop.
-                        server.Stop();
-                        isActive = false;
-                        setButtonServerStart(isActive);
-                        printToServerConsole("Server Stopped.\n");
-                    }
-
-                }
+                if (startDelegate != null) { startDelegate(); }
+                this.isActive = true;
+                client = server.AcceptTcpClient();
+                // print che si collega, ma come?
+                while (isActive) { ReceiveData(); }
                 
             }
+            catch { }
             
         }
 
-		public void ActivateServer(int p, string ip)
+        public void AcceptData()
         {
-          
-            //Proviamo a parsare le informazioni per istanziare il server
-            try
-            {
-                localAddr = IPAddress.Parse(ip);
-                server = new TcpListener(localAddr, p);
-                isActive = true;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("IP Addressing Error!\n" + ex.Message);
-                isActive = false;
-            }
-            setButtonServerStart(isActive);
+            ReceiveData();
         }
 
         public void Stop()
         {
-            //this.client.Close(); non viene istanziato
+            if (client != null) { this.client.Close(); }
             this.server.Stop();
-            setButtonServerStart(isActive);
             this.isActive = false;
+            if (stopDelegate != null) { stopDelegate(); } // viene stampato anche la prima volta che si preme start!
         }
 
-        // gestire disconnessione da parte del client
         private void ReceiveData()
         {
             NetworkStream stream = client.GetStream();
             BinaryReader bin = new BinaryReader(stream);
 
             List<Packet> samplewin = new List<Packet>();
-            
-                byte[] client_id = bin.ReadBytes(10);
-                printToServerConsole(String.Format("CLIENT ID : {0}\n", System.Text.Encoding.UTF8.GetString(client_id)));
 
-                byte bid;
-                byte mid;
-                byte len;
-                byte ext_len_mul = 0;
-                byte ext_len_add = 0;
-                bool isExtLen;
-                int dataLength;
-                int sensorsNumber;
+            byte bid;
+            byte mid;
+            byte len;
+            byte ext_len_mul = 0;
+            byte ext_len_add = 0;
+            bool isExtLen;
+            int dataLength;
+            int sensorsNumber;
 
-                bid = 0xFF;
-                mid = 0x32;
+            bid = 0xFF;
+            mid = 0x32;
 
-                byte[] pream = new byte[3];
+            byte[] pream = new byte[3];
 
-                // cerca la sequenza FF-32
-                while (!(pream[0] == 0xFF && pream[1] == 0x32))
+            // cerca la sequenza FF-32
+            while (!(pream[0] == 0xFF && pream[1] == 0x32))
+            {
+                pream[0] = pream[1];
+                pream[1] = pream[2];
+                byte[] read = bin.ReadBytes(1);
+                pream[2] = read[0];
+            }
+
+            len = pream[2];
+            isExtLen = pream[2] == 0xFF;
+
+            // modalità normale
+            if (!isExtLen)
+            {
+                dataLength = pream[2];
+            }
+            else
+            {
+                // modalità extended-length
+                byte[] tmp = new byte[2];
+                tmp = bin.ReadBytes(2);
+                ext_len_mul = tmp[0];
+                ext_len_add = tmp[1];
+                dataLength = (ext_len_mul * 256) + ext_len_add;
+            }
+
+            sensorsNumber = (dataLength - 2) / 52; // calcolo del numero di sensori
+
+            byte[] rawData = bin.ReadBytes(dataLength + 1); // lettura dei dati
+
+            while (this.isActive && rawData.Count() != 0)
+            {
+
+                Packet packet = new Packet();
+                packet.BID = bid;
+                packet.MID = mid;
+                packet.len = len;
+                packet.ext_len_mul = ext_len_mul;
+                packet.ext_len_add = ext_len_add;
+                packet.IsExtLen = isExtLen;
+                packet.DataLength = dataLength;
+                packet.SensorsNumber = sensorsNumber;
+                packet.Sensors = new Sensor[sensorsNumber];
+
+                for (int i = 0; i < sensorsNumber; i++)
                 {
-                    pream[0] = pream[1];
-                    pream[1] = pream[2];
-                    byte[] read = bin.ReadBytes(1);
-                    pream[2] = read[0];
+                    packet.Sensors[i].acc = new double[3];
+                    packet.Sensors[i].gyr = new double[3];
+                    packet.Sensors[i].mag = new double[3];
+                    packet.Sensors[i].q = new double[4];
                 }
 
-                len = pream[2];
-                isExtLen = pream[2] == 0xFF;
+                ParsePacket(packet, rawData);
+                samplewin.Add(packet);
 
-                // modalità normale
+                int campNum = window * frequence;
+                if (samplewin.Count % (campNum / 2) == 0 && samplewin.Count >= campNum)
+                {
+                    if (samplewinDelegate != null) { samplewinDelegate(samplewin); }
+                }
+
                 if (!isExtLen)
                 {
-                    dataLength = pream[2];
+                    bin.ReadBytes(3);
                 }
                 else
                 {
-                    // modalità extended-length
-                    byte[] tmp = new byte[2];
-                    tmp = bin.ReadBytes(2);
-                    ext_len_mul = tmp[0];
-                    ext_len_add = tmp[1];
-                    dataLength = (ext_len_mul * 256) + ext_len_add;
+                    bin.ReadBytes(5);
                 }
 
-                sensorsNumber = (dataLength - 2) / 52; // calcolo del numero di sensori
-
-                byte[] rawData = bin.ReadBytes(dataLength + 1); // lettura dei dati
-
-                while (this.isActive && rawData.Count() != 0)
-                {
-
-                    Packet packet = new Packet();
-                    packet.BID = bid;
-                    packet.MID = mid;
-                    packet.len = len;
-                    packet.ext_len_mul = ext_len_mul;
-                    packet.ext_len_add = ext_len_add;
-                    packet.IsExtLen = isExtLen;
-                    packet.DataLength = dataLength;
-                    packet.SensorsNumber = sensorsNumber;
-                    packet.Sensors = new Sensor[sensorsNumber];
-
-                    for (int i = 0; i < sensorsNumber; i++)
-                    {
-                        packet.Sensors[i].acc = new double[3];
-                        packet.Sensors[i].gyr = new double[3];
-                        packet.Sensors[i].mag = new double[3];
-                        packet.Sensors[i].q = new double[4];
-                    }
-
-                    ParsePacket(packet, rawData);
-                    samplewin.Add(packet);
-
-                    int campNum = window * frequence;
-                    if (samplewin.Count % (campNum / 2) == 0 && samplewin.Count >= campNum)
-                    {
-                        samplewinDelegate(samplewin);
-                    }
-
-                    if (!isExtLen)
-                    {
-                        bin.ReadBytes(3);
-                    }
-                    else
-                    {
-                        bin.ReadBytes(5);
-                    }
-
-                    rawData = bin.ReadBytes(dataLength + 1);
-                }
-                samplewinDelegate(samplewin);
-
-            
+                rawData = bin.ReadBytes(dataLength + 1);
+            }
+            if (samplewinDelegate != null) { samplewinDelegate(samplewin); }
         }
 
         private Packet ParsePacket(Packet packet, byte[] rawData)

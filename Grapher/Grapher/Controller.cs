@@ -100,14 +100,10 @@ namespace Grapher
             segmentation_cb.Checked = false;
             //segmentation_cb.Enabled = ( (selectedGraph == 0 && selectedSensorType == 0) ? true : false );
             // dovrebbe avere anche client, csvPath, pritnCSV, printServerConsole, setButtonServerStart, Sampwin
-            parser = new DataProvider(
-                Int32.Parse(port.Text),
-                String.Format( "{0}.{1}.{2}.{3}", ip1.Text, ip2.Text, ip3.Text, ip4.Text ),
-                frequence,
-                window,
-                printToServerConsole,
-                setButtonServerStart
-                );
+            parser = new DataProvider();
+            parser.samplewinDelegate = DataProviderSampleWindowReceived;
+            parser.startDelegate = DataProviderServerDidStart;
+            parser.stopDelegate = DataProviderServerDidStop;
 
             sensor_position.SelectedIndex = sensor_position.FindStringExact( "1 (bacino)" );
             selectedSensor = sensor_position.SelectedIndex;
@@ -117,12 +113,6 @@ namespace Grapher
             // selected graph
             type_of_grph_cb.SelectedIndex = type_of_grph_cb.FindStringExact( "Modulo" );
             selectedGraph = type_of_grph_cb.SelectedIndex;
-            // server Thread per avviarlo in un thread separato ...
-            threadParser = new Thread(parser.AcceptConnection)
-            {
-                IsBackground = true
-            };
-            threadParser.Start();
 
         }
 
@@ -148,11 +138,13 @@ namespace Grapher
                 {
                     // dovrei attiavare il server, ma il nostro costruttore crea il parser e attiva il server, quindi se 
                     // devo startarlo non ho nessun metodo che lo faccia?? lo creo io 
-                    parser.ActivateServer(
+                    parser.ChangeAddressAndPort(
                         Int32.Parse(port.Text),
                         String.Format("{0}.{1}.{2}.{3}", ip1.Text, ip2.Text, ip3.Text, ip4.Text)
                         );
                     //parser.ChangeFrequenceAndWindow(frequence, window);
+                    threadParser = new Thread(new ThreadStart(parser.AcceptConnection));
+                    threadParser.Start();
                 } catch (SocketException exc)
                 {
                     console.AppendText(String.Format("{0}\n", exc));
@@ -184,52 +176,6 @@ namespace Grapher
             }
         }
 
-        public delegate void setButtonServerStartDelegate(bool b);
-
-        
-        public void setButtonServerStart(bool b)
-        {
-            if (this.btn_server_start.InvokeRequired)
-            {
-                Invoke(new setButtonServerStartDelegate(setButtonServerStart), new object[] { b });
-            }
-            else
-            {
-                if (b)
-                {
-                    //Disabilita input server quando server attivo
-                    port.Enabled = false;
-                    ip1.Enabled = false;
-                    ip2.Enabled = false;
-                    ip3.Enabled = false;
-                    ip4.Enabled = false;
-                    frequence_box.Enabled = false;
-                    numericUpDownWindow.Enabled = false;
-                    csv_path.Enabled = false;
-                    buttonSelectFolder.Enabled = false;
-                    //checkBoxSaveCsv.Enabled = false;
-                    btn_server_start.Text = "STOP";
-                }
-                else
-                {
-                    //Riabilita input server quando server inattivo.
-                    port.Enabled = true;
-                    ip1.Enabled = true;
-                    ip2.Enabled = true;
-                    ip3.Enabled = true;
-                    ip4.Enabled = true;
-                    frequence_box.Enabled = true;
-                    numericUpDownWindow.Enabled = true;
-                    csv_path.Enabled = true;
-                    buttonSelectFolder.Enabled = true;
-                    //checkBoxSaveCsv.Enabled = true;
-                    btn_server_start.Text = "START";
-
-                }
-            }
-        }
-
-
             private void buttonSelectFolder_Click(object sender, EventArgs e)
         {
             DialogResult result = folderBrowserDialog1.ShowDialog();
@@ -250,6 +196,101 @@ namespace Grapher
         }
 
 
+        // DataProviderDelegates
+
+        public void DataProviderServerDidStart()
+        {
+            if (this.btn_server_start.InvokeRequired)
+            {
+               Invoke(new DataProviderServerStarted(DataProviderServerDidStart));
+            } else {
+                port.Enabled = false;
+                ip1.Enabled = false;
+                ip2.Enabled = false;
+                ip3.Enabled = false;
+                ip4.Enabled = false;
+                frequence_box.Enabled = false;
+                numericUpDownWindow.Enabled = false;
+                csv_path.Enabled = false;
+                buttonSelectFolder.Enabled = false;
+                //checkBoxSaveCsv.Enabled = false;
+                btn_server_start.Text = "STOP";
+                //aggiungere scritta console
+                printToServerConsole("Waiting for a connection ...\n");
+            }
+            
+        }
+
+        public void DataProviderSampleWindowReceived(List<Packet> samplewin)
+        {
+
+        }
+
+        public void DataProviderServerDidStop()
+        {
+            if (this.btn_server_start.InvokeRequired)
+            {
+                Invoke(new DataProviderServerStopped(DataProviderServerDidStop));
+            } else
+            { //Riabilita input server quando server inattivo.
+                port.Enabled = true;
+                ip1.Enabled = true;
+                ip2.Enabled = true;
+                ip3.Enabled = true;
+                ip4.Enabled = true;
+                frequence_box.Enabled = true;
+                numericUpDownWindow.Enabled = true;
+                csv_path.Enabled = true;
+                buttonSelectFolder.Enabled = true;
+                //checkBoxSaveCsv.Enabled = true;
+                btn_server_start.Text = "START";
+                printToServerConsole("Server stopped.\n");
+            }
+           
+        }
+
+        private double[] ExtractAngles(double[,] data, int kind)
+        {
+            int size = data.GetLength(0);
+            double[] e = new double[size];
+
+            for (int i = 0; i < size; i++)
+            {
+                e[i] = data[i, kind];
+            }
+
+            return e;
+        }
+
+        private void DisplayData(double[] data, Boolean willClearPane, Color col)
+        {
+            GraphPane pane = zedGraphControl1.GraphPane;
+            if (willClearPane) { pane.CurveList.Clear(); }
+            PointPairList plist = new PointPairList();
+            for (int i = 0; i < data.Length; i++)
+            {
+                plist.Add(new PointPair(i, data[i]));
+            }
+            pane.AddCurve("Prova", plist, col, SymbolType.None);
+            zedGraphControl1.AxisChange();
+            zedGraphControl1.Refresh();
+        }
+
+        /*private double[,] ExtractData(int sensNum, int sensType)
+        {
+            int size = selected.Count;
+            double[,] data = new double[size, 3];
+
+            for (int i = 0; i < size; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    data[i, j] = selected[i].Sensors[sensNum].acc[j];
+                }
+            }
+
+            return data;
+        }*/
 
     }
 }
