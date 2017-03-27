@@ -126,6 +126,7 @@
             this.btn_console_clear.TabIndex = 19;
             this.btn_console_clear.Text = "CLEAR";
             this.btn_console_clear.UseVisualStyleBackColor = true;
+            this.btn_console_clear.Click += new System.EventHandler(this.btn_console_clear_Click);
             // 
             // server_side_label
             // 
@@ -368,6 +369,7 @@
             this.smoothing_cb.TabIndex = 6;
             this.smoothing_cb.Text = "Smoothing";
             this.smoothing_cb.UseVisualStyleBackColor = true;
+            this.smoothing_cb.CheckedChanged += new System.EventHandler(this.smoothing_cb_CheckedChanged);
             // 
             // plot_window_cb
             // 
@@ -419,6 +421,7 @@
             this.sensor_type.Name = "sensor_type";
             this.sensor_type.Size = new System.Drawing.Size(100, 21);
             this.sensor_type.TabIndex = 2;
+            this.sensor_type.SelectedIndexChanged += new System.EventHandler(this.sensor_type_SelectedIndexChanged);
             // 
             // label_sensor_position
             // 

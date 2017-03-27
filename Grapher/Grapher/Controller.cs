@@ -18,6 +18,9 @@ namespace Grapher
     {
 
         private DataProvider parser;
+        private List<Packet> samplewin;
+        private List<Packet> selected;
+        private List<Packet> smoothed;
         /// Thread nel quale gira il parser, o meglio la funzione che gestisce il Server.
         Thread threadParser;
         /// Frequenza di campionamento.
@@ -103,7 +106,7 @@ namespace Grapher
             parser = new DataProvider();
             parser.samplewinDelegate = DataProviderSampleWindowReceived;
             parser.startDelegate = DataProviderServerDidStart;
-            parser.stopDelegate = DataProviderServerDidStop;
+            
 
             sensor_position.SelectedIndex = sensor_position.FindStringExact( "1 (bacino)" );
             selectedSensor = sensor_position.SelectedIndex;
@@ -142,7 +145,7 @@ namespace Grapher
                         Int32.Parse(port.Text),
                         String.Format("{0}.{1}.{2}.{3}", ip1.Text, ip2.Text, ip3.Text, ip4.Text)
                         );
-                    //parser.ChangeFrequenceAndWindow(frequence, window);
+                    parser.stopDelegate = DataProviderServerDidStop;
                     threadParser = new Thread(new ThreadStart(parser.AcceptConnection));
                     threadParser.Start();
                 } catch (SocketException exc)
@@ -176,7 +179,7 @@ namespace Grapher
             }
         }
 
-            private void buttonSelectFolder_Click(object sender, EventArgs e)
+        private void buttonSelectFolder_Click(object sender, EventArgs e)
         {
             DialogResult result = folderBrowserDialog1.ShowDialog();
             if (result == DialogResult.OK)
@@ -186,21 +189,44 @@ namespace Grapher
             }
         }
 
-        private void buttonClearConsole_Click(object sender, EventArgs e)
+        private void btn_console_clear_Click(object sender, EventArgs e)
         {
             console.Text = "";
             if (parser.IsActive)
             {
                 console.Text = "Server is Active.\n";
+            } else
+            {
+                console.Text = "Server is Stopped.\n";
             }
         }
 
 
         // DataProviderDelegates
 
+        public void DataProviderSampleWindowReceived(List<Packet> sampwin)
+        {
+            
+            if (this.InvokeRequired)
+            {
+                Invoke(new DataProviderSampleWindow(DataProviderSampleWindowReceived), new object[] { sampwin });
+            }
+            else
+            {
+                // esempio con modulo
+                // devo controllare subito quali sono le opzioni dell'utente,dato che viene richiamata dopo una decina di secondi
+                samplewin = sampwin;
+                smoothed = DataAnalysis.SmoothData(samplewin, 10);
+                selected = smoothed;
+                double[,] data = ExtractData();
+                double[] modules = DataAnalysis.ComputeModules(data);
+                DisplayData(modules, true, Color.Blue);
+            }
+        }
+
         public void DataProviderServerDidStart()
         {
-            if (this.btn_server_start.InvokeRequired)
+            if (this.InvokeRequired)
             {
                Invoke(new DataProviderServerStarted(DataProviderServerDidStart));
             } else {
@@ -220,15 +246,10 @@ namespace Grapher
             }
             
         }
-
-        public void DataProviderSampleWindowReceived(List<Packet> samplewin)
-        {
-
-        }
-
+        
         public void DataProviderServerDidStop()
         {
-            if (this.btn_server_start.InvokeRequired)
+            if (this.InvokeRequired)
             {
                 Invoke(new DataProviderServerStopped(DataProviderServerDidStop));
             } else
@@ -262,21 +283,51 @@ namespace Grapher
             return e;
         }
 
+        // non deve prendere un array di double, ma meglio una lista di packet. altrimenti
+        // devo richiareextract data ogni volta che premo un qualsiasi bottone, meglio 
+        // fare la chiamata allínterno di display data
         private void DisplayData(double[] data, Boolean willClearPane, Color col)
         {
-            GraphPane pane = zedGraphControl1.GraphPane;
-            if (willClearPane) { pane.CurveList.Clear(); }
+            if (willClearPane) { myPane.CurveList.Clear(); }
+            myPane.XAxis.Title.Text = "time (seconds)";
+            switch(selectedSensorType)
+            {
+                case 0:
+                    //acc
+                    printToServerConsole("acc");
+                    myPane.YAxis.Title.Text = "m/s²";
+                    break;
+                case 1:
+                    //gyr
+                    printToServerConsole("gry");
+                    myPane.YAxis.Title.Text = "Rad/s²";
+                    break;
+                case 2:
+                    //mag
+                    printToServerConsole("mag");
+                    myPane.YAxis.Title.Text = "Tesla";
+                    break;
+                case 3:
+                    //qua
+                    printToServerConsole("qua");
+                    myPane.YAxis.Title.Text = "y";
+                    break;
+                default:
+                    //bohh
+                    myPane.YAxis.Title.Text = "none";
+                    break;
+            }
             PointPairList plist = new PointPairList();
             for (int i = 0; i < data.Length; i++)
             {
                 plist.Add(new PointPair(i, data[i]));
             }
-            pane.AddCurve("Prova", plist, col, SymbolType.None);
+            myPane.AddCurve("Prova", plist, col, SymbolType.None);
             zedGraphControl1.AxisChange();
             zedGraphControl1.Refresh();
         }
 
-        /*private double[,] ExtractData(int sensNum, int sensType)
+        private double[,] ExtractData() // int sensNum, int sensType
         {
             int size = selected.Count;
             double[,] data = new double[size, 3];
@@ -285,13 +336,29 @@ namespace Grapher
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    data[i, j] = selected[i].Sensors[sensNum].acc[j];
+                    data[i, j] = selected[i].Sensors[0].acc[j];
                 }
             }
 
             return data;
-        }*/
+        }
 
+        private void smoothing_cb_CheckedChanged(object sender, EventArgs e)
+        {
+            selected = smoothing_cb.Checked ? smoothed : samplewin;
+        }
+
+        private void sensor_type_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            selectedSensorType = sensor_type.SelectedIndex;
+            if (samplewin != null)
+            {
+                // fare una funzione che 
+                //DisplayData(samplewin, true, Color.Blue);
+            }
+            //checkBoxSegmentation.Enabled = ((selectedChart == 0 && selectedSensorType == 0) ? true : false);
+            //checkBoxSegmentation.Checked = false;
+        }
     }
 }
 
