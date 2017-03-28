@@ -56,7 +56,6 @@
             this.segmentation_cb = new System.Windows.Forms.CheckBox();
             this.numericUpDown_smoothing = new System.Windows.Forms.NumericUpDown();
             this.smoothing_cb = new System.Windows.Forms.CheckBox();
-            this.plot_window_cb = new System.Windows.Forms.CheckBox();
             this.zedGraphControl1 = new ZedGraph.ZedGraphControl();
             this.sensor_position = new System.Windows.Forms.ComboBox();
             this.sensor_type = new System.Windows.Forms.ComboBox();
@@ -108,7 +107,6 @@
             this.splitContainer1.Panel2.Controls.Add(this.segmentation_cb);
             this.splitContainer1.Panel2.Controls.Add(this.numericUpDown_smoothing);
             this.splitContainer1.Panel2.Controls.Add(this.smoothing_cb);
-            this.splitContainer1.Panel2.Controls.Add(this.plot_window_cb);
             this.splitContainer1.Panel2.Controls.Add(this.zedGraphControl1);
             this.splitContainer1.Panel2.Controls.Add(this.sensor_position);
             this.splitContainer1.Panel2.Controls.Add(this.sensor_type);
@@ -315,17 +313,19 @@
             // 
             // type_of_grph_cb
             // 
+            this.type_of_grph_cb.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.type_of_grph_cb.FormattingEnabled = true;
             this.type_of_grph_cb.Items.AddRange(new object[] {
             "Modulo",
             "Derivata",
-            "Eulero",
             "Deviazione",
+            "Eulero",
             "Dead Reckoning"});
             this.type_of_grph_cb.Location = new System.Drawing.Point(116, 25);
             this.type_of_grph_cb.Name = "type_of_grph_cb";
             this.type_of_grph_cb.Size = new System.Drawing.Size(100, 21);
             this.type_of_grph_cb.TabIndex = 10;
+            this.type_of_grph_cb.SelectedIndexChanged += new System.EventHandler(this.type_of_grph_cb_SelectedIndexChanged);
             // 
             // type_of_graph
             // 
@@ -357,6 +357,7 @@
             0,
             0,
             0});
+            this.numericUpDown_smoothing.ValueChanged += new System.EventHandler(this.numericUpDown_smoothing_ValueChanged);
             // 
             // smoothing_cb
             // 
@@ -370,16 +371,6 @@
             this.smoothing_cb.Text = "Smoothing";
             this.smoothing_cb.UseVisualStyleBackColor = true;
             this.smoothing_cb.CheckedChanged += new System.EventHandler(this.smoothing_cb_CheckedChanged);
-            // 
-            // plot_window_cb
-            // 
-            this.plot_window_cb.AutoSize = true;
-            this.plot_window_cb.Location = new System.Drawing.Point(89, 582);
-            this.plot_window_cb.Name = "plot_window_cb";
-            this.plot_window_cb.Size = new System.Drawing.Size(124, 17);
-            this.plot_window_cb.TabIndex = 5;
-            this.plot_window_cb.Text = "Plot only last window";
-            this.plot_window_cb.UseVisualStyleBackColor = true;
             // 
             // zedGraphControl1
             // 
@@ -397,6 +388,7 @@
             // 
             // sensor_position
             // 
+            this.sensor_position.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.sensor_position.FormattingEnabled = true;
             this.sensor_position.Items.AddRange(new object[] {
             "1 (bacino)",
@@ -408,9 +400,11 @@
             this.sensor_position.Name = "sensor_position";
             this.sensor_position.Size = new System.Drawing.Size(100, 21);
             this.sensor_position.TabIndex = 3;
+            this.sensor_position.SelectedIndexChanged += new System.EventHandler(this.sensor_position_SelectedIndexChanged);
             // 
             // sensor_type
             // 
+            this.sensor_type.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.sensor_type.FormattingEnabled = true;
             this.sensor_type.Items.AddRange(new object[] {
             "Acc",
@@ -489,7 +483,6 @@
         private System.Windows.Forms.CheckBox segmentation_cb;
         private System.Windows.Forms.NumericUpDown numericUpDown_smoothing;
         private System.Windows.Forms.CheckBox smoothing_cb;
-        private System.Windows.Forms.CheckBox plot_window_cb;
         private ZedGraph.ZedGraphControl zedGraphControl1;
         private System.Windows.Forms.ComboBox sensor_position;
         private System.Windows.Forms.ComboBox sensor_type;
