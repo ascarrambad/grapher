@@ -105,7 +105,7 @@ namespace Grapher
             // dovrebbe avere anche client, csvPath, pritnCSV, printServerConsole, setButtonServerStart, Sampwin
             parser = new DataProvider();
             parser.samplewinDelegate = DataProviderSampleWindowReceived;
-            parser.startDelegate = DataProviderServerDidStart;
+            parser.serverStartedDelegate = DataProviderServerDidStart;
 
 
             sensor_position.SelectedIndex = sensor_position.FindStringExact("1 (bacino)");
@@ -143,7 +143,7 @@ namespace Grapher
                         Int32.Parse(port.Text),
                         String.Format("{0}.{1}.{2}.{3}", ip1.Text, ip2.Text, ip3.Text, ip4.Text)
                         );
-                    parser.stopDelegate = DataProviderServerDidStop;
+                    parser.serverStoppedDelegate = DataProviderServerDidStop;
                     threadParser = new Thread(new ThreadStart(parser.AcceptConnection));
                     threadParser.Start();
                 }
@@ -198,11 +198,22 @@ namespace Grapher
 
         // DataProviderDelegates
 
-        public void DataProviderSampleWindowReceived(List<Packet> sampwin)
+        void DataProviderClientConnectedWriter(DataProvider dataProvider, TcpClient aClient) {
+            if (this.InvokeRequired)
+            {
+                Invoke(new DataProviderClientConnected(DataProviderClientConnectedWriter), new object[] { dataProvider, aClient });
+            } else
+            {
+                // azione di scrivere che il client e'connesso, non funziona
+                printToServerConsole("Client connected!\n");
+            }
+        }
+
+         void DataProviderSampleWindowReceived(DataProvider dataProvider, List<Packet> sampwin)
         {
 
             if (this.InvokeRequired) {
-                Invoke(new DataProviderSampleWindow(DataProviderSampleWindowReceived), new object[] { sampwin });
+                Invoke(new DataProviderSampleWindow(DataProviderSampleWindowReceived), new object[] { dataProvider, sampwin });
             }
             else {
                 // esempio con modulo
@@ -216,10 +227,10 @@ namespace Grapher
             }
         }
 
-        public void DataProviderServerDidStart()
+        void DataProviderServerDidStart(DataProvider dataProvider)
         {
             if (this.InvokeRequired) {
-                Invoke(new DataProviderServerStarted(DataProviderServerDidStart));
+                Invoke(new DataProviderServerStarted(DataProviderServerDidStart), new object[] { dataProvider });
             }
             else {
                 port.Enabled = false;
@@ -239,10 +250,10 @@ namespace Grapher
 
         }
 
-        public void DataProviderServerDidStop()
+        void DataProviderServerDidStop(DataProvider dataProvider)
         {
             if (this.InvokeRequired) {
-                Invoke(new DataProviderServerStopped(DataProviderServerDidStop));
+                Invoke(new DataProviderServerStopped(DataProviderServerDidStop), new object[] { dataProvider });
             }
             else { //Riabilita input server quando server inattivo.
                 port.Enabled = true;
@@ -256,7 +267,7 @@ namespace Grapher
                 buttonSelectFolder.Enabled = true;
                 //checkBoxSaveCsv.Enabled = true;
                 btn_server_start.Text = "START";
-                printToServerConsole("Server stopped.\n");
+                printToServerConsole("Server stopped.\n"); // stampato due volte nel caso io stoppo e starto
             }
 
         }
@@ -330,10 +341,11 @@ namespace Grapher
                     for (int i = 0; i < modules.Length; i++) {
                         plist.Add(new PointPair(i, modules[i]));
                     }
+                    // problemi con i titoli
+                    myPane.Title.Text = "Module";
                     myPane.AddCurve("Module", plist, Color.Blue, SymbolType.None);
                     zedGraphControl1.AxisChange();
                     zedGraphControl1.Refresh();
-                    myPane.Title.Text = "Module";
                     break;
                 case 1:
                     // der
@@ -343,10 +355,10 @@ namespace Grapher
                     for (int i = 0; i < drv.Length; i++) {
                         plist.Add(new PointPair(i, drv[i]));
                     }
+                    myPane.Title.Text = "Derivated";
                     myPane.AddCurve("Derivated", plist, Color.Blue, SymbolType.None);
                     zedGraphControl1.AxisChange();
                     zedGraphControl1.Refresh();
-                    myPane.Title.Text = "Derivated";
                     break;
                 case 2:
                     // std
@@ -356,10 +368,10 @@ namespace Grapher
                     for (int i = 0; i < dst.Length; i++) {
                         plist.Add(new PointPair(i, dst[i]));
                     }
+                    myPane.Title.Text = "Standard Deviation";
                     myPane.AddCurve("Standard Deviation", plist, Color.Blue, SymbolType.None);
                     zedGraphControl1.AxisChange();
                     zedGraphControl1.Refresh();
-                    myPane.Title.Text = "Standard Deviation";
                     break;
             } 
         }

@@ -11,7 +11,7 @@ using System.Windows.Forms;
 namespace Grapher
 {
 
-    public struct Sensor
+    struct Sensor
     {
         public double[] acc;
         public double[] gyr;
@@ -19,7 +19,7 @@ namespace Grapher
         public double[] q;
     }
 
-    public struct Packet
+    struct Packet
     {
         public byte BID;
         public byte MID;
@@ -34,9 +34,11 @@ namespace Grapher
         public Sensor[] Sensors;
     }
 
-    public delegate void DataProviderServerStarted();
-    public delegate void DataProviderSampleWindow(List<Packet> samplewin);
-    public delegate void DataProviderServerStopped();
+    delegate void DataProviderServerStarted(DataProvider dataProvider);
+    delegate void DataProviderClientConnected(DataProvider dataProvider, TcpClient client);
+    delegate void DataProviderSampleWindow(DataProvider dataProvider, List<Packet> samplewin);
+    delegate void DataProviderClientDisconnected(DataProvider dataProvider, TcpClient client);
+    delegate void DataProviderServerStopped(DataProvider dataProvider);
 
     class DataProvider
     {
@@ -57,9 +59,11 @@ namespace Grapher
         public int Window { get => window; }
         public int Frequence { get => frequence; }
 
+        public DataProviderServerStarted serverStartedDelegate;
+        public DataProviderClientConnected clientConnectedDelegate;
         public DataProviderSampleWindow samplewinDelegate;
-        public DataProviderServerStarted startDelegate;
-        public DataProviderServerStopped stopDelegate;
+        public DataProviderClientDisconnected clientDisconnectedDelegate;
+        public DataProviderServerStopped serverStoppedDelegate;
 
         public DataProvider() : this(45555, "127.0.0.1") { }
 
@@ -110,23 +114,16 @@ namespace Grapher
 
         public void AcceptConnection()
         {
-            // gestire il qualche modo l'overflow
+
             try
             {
-                if (startDelegate != null) { startDelegate(); }
+                serverStartedDelegate?.Invoke(this);
                 this.isActive = true;
                 client = server.AcceptTcpClient();
-                // print che si collega, ma come?
-                while (isActive) { ReceiveData(); }
-                
+                clientConnectedDelegate?.Invoke(this, client);
+                ReceiveData();
             }
             catch { }
-            
-        }
-
-        public void AcceptData()
-        {
-            ReceiveData();
         }
 
         public void Stop()
@@ -134,7 +131,7 @@ namespace Grapher
             if (client != null) { this.client.Close(); }
             this.server.Stop();
             this.isActive = false;
-            if (stopDelegate != null) { stopDelegate(); } // viene stampato anche la prima volta che si preme start!
+            serverStoppedDelegate?.Invoke(this);
         }
 
         private void ReceiveData()
@@ -192,16 +189,18 @@ namespace Grapher
             while (this.isActive && rawData.Count() != 0)
             {
 
-                Packet packet = new Packet();
-                packet.BID = bid;
-                packet.MID = mid;
-                packet.len = len;
-                packet.ext_len_mul = ext_len_mul;
-                packet.ext_len_add = ext_len_add;
-                packet.IsExtLen = isExtLen;
-                packet.DataLength = dataLength;
-                packet.SensorsNumber = sensorsNumber;
-                packet.Sensors = new Sensor[sensorsNumber];
+                Packet packet = new Packet()
+                {
+                    BID = bid,
+                    MID = mid,
+                    len = len,
+                    ext_len_mul = ext_len_mul,
+                    ext_len_add = ext_len_add,
+                    IsExtLen = isExtLen,
+                    DataLength = dataLength,
+                    SensorsNumber = sensorsNumber,
+                    Sensors = new Sensor[sensorsNumber]
+                };
 
                 for (int i = 0; i < sensorsNumber; i++)
                 {
@@ -217,7 +216,7 @@ namespace Grapher
                 int campNum = window * frequence;
                 if (samplewin.Count % (campNum / 2) == 0 && samplewin.Count >= campNum)
                 {
-                    if (samplewinDelegate != null) { samplewinDelegate(samplewin); }
+                    samplewinDelegate?.Invoke(this, samplewin);
                 }
 
                 if (!isExtLen)
@@ -231,7 +230,10 @@ namespace Grapher
 
                 rawData = bin.ReadBytes(dataLength + 1);
             }
-            if (samplewinDelegate != null) { samplewinDelegate(samplewin); }
+            samplewinDelegate?.Invoke(this, samplewin);
+            client.Close();
+            clientDisconnectedDelegate?.Invoke(this, client);
+            client = null;
         }
 
         private Packet ParsePacket(Packet packet, byte[] rawData)
