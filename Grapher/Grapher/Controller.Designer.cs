@@ -53,7 +53,6 @@
             this.console = new System.Windows.Forms.RichTextBox();
             this.type_of_grph_cb = new System.Windows.Forms.ComboBox();
             this.type_of_graph = new System.Windows.Forms.Label();
-            this.segmentation_cb = new System.Windows.Forms.CheckBox();
             this.numericUpDown_smoothing = new System.Windows.Forms.NumericUpDown();
             this.smoothing_cb = new System.Windows.Forms.CheckBox();
             this.zedGraphControl1 = new ZedGraph.ZedGraphControl();
@@ -104,7 +103,6 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.type_of_grph_cb);
             this.splitContainer1.Panel2.Controls.Add(this.type_of_graph);
-            this.splitContainer1.Panel2.Controls.Add(this.segmentation_cb);
             this.splitContainer1.Panel2.Controls.Add(this.numericUpDown_smoothing);
             this.splitContainer1.Panel2.Controls.Add(this.smoothing_cb);
             this.splitContainer1.Panel2.Controls.Add(this.zedGraphControl1);
@@ -303,8 +301,8 @@
             // console
             // 
             this.console.BackColor = System.Drawing.SystemColors.MenuText;
-            this.console.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.console.ForeColor = System.Drawing.SystemColors.MenuHighlight;
+            this.console.Font = new System.Drawing.Font("Comic Sans MS", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.console.ForeColor = System.Drawing.Color.DeepSkyBlue;
             this.console.Location = new System.Drawing.Point(12, 343);
             this.console.Name = "console";
             this.console.Size = new System.Drawing.Size(251, 212);
@@ -336,19 +334,14 @@
             this.type_of_graph.TabIndex = 9;
             this.type_of_graph.Text = "Graph";
             // 
-            // segmentation_cb
-            // 
-            this.segmentation_cb.AutoSize = true;
-            this.segmentation_cb.Location = new System.Drawing.Point(706, 581);
-            this.segmentation_cb.Name = "segmentation_cb";
-            this.segmentation_cb.Size = new System.Drawing.Size(91, 17);
-            this.segmentation_cb.TabIndex = 8;
-            this.segmentation_cb.Text = "Segmentation";
-            this.segmentation_cb.UseVisualStyleBackColor = true;
-            // 
             // numericUpDown_smoothing
             // 
-            this.numericUpDown_smoothing.Location = new System.Drawing.Point(515, 581);
+            this.numericUpDown_smoothing.Location = new System.Drawing.Point(188, 582);
+            this.numericUpDown_smoothing.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
             this.numericUpDown_smoothing.Name = "numericUpDown_smoothing";
             this.numericUpDown_smoothing.Size = new System.Drawing.Size(37, 20);
             this.numericUpDown_smoothing.TabIndex = 7;
@@ -364,7 +357,7 @@
             this.smoothing_cb.AutoSize = true;
             this.smoothing_cb.Checked = true;
             this.smoothing_cb.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.smoothing_cb.Location = new System.Drawing.Point(432, 581);
+            this.smoothing_cb.Location = new System.Drawing.Point(105, 582);
             this.smoothing_cb.Name = "smoothing_cb";
             this.smoothing_cb.Size = new System.Drawing.Size(76, 17);
             this.smoothing_cb.TabIndex = 6;
@@ -442,7 +435,7 @@
             this.ClientSize = new System.Drawing.Size(1143, 611);
             this.Controls.Add(this.splitContainer1);
             this.Name = "Controller";
-            this.Text = "Form1";
+            this.Text = "7";
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel1.PerformLayout();
             this.splitContainer1.Panel2.ResumeLayout(false);
@@ -480,7 +473,6 @@
         private System.Windows.Forms.NumericUpDown numericUpDownWindow;
         private System.Windows.Forms.Label window_l;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.CheckBox segmentation_cb;
         private System.Windows.Forms.NumericUpDown numericUpDown_smoothing;
         private System.Windows.Forms.CheckBox smoothing_cb;
         private ZedGraph.ZedGraphControl zedGraphControl1;

@@ -41,6 +41,7 @@ namespace Grapher
         List<double[,]> mySampwin;
         /// Range per lo smoothing: anche raggio dell'intorno in cui guardare per fare la media per la deviazione standard.
         int smoothRange = 10;
+        Boolean smooth;
         /*/// Var riconoscimento azione - moto : inizio del moto.
         double motoStart = 0;
         /// Var riconoscimento azione - moto : inizio dello stato di fermo.
@@ -100,13 +101,14 @@ namespace Grapher
 
             selectedGraph = type_of_grph_cb.SelectedIndex;
             // default value of segmentation
-            segmentation_cb.Checked = false;
             //segmentation_cb.Enabled = ( (selectedGraph == 0 && selectedSensorType == 0) ? true : false );
             // dovrebbe avere anche client, csvPath, pritnCSV, printServerConsole, setButtonServerStart, Sampwin
             parser = new DataProvider();
             parser.samplewinDelegate = DataProviderSampleWindowReceived;
             parser.serverStartedDelegate = DataProviderServerDidStart;
-
+            parser.serverStoppedDelegate = DataProviderServerDidStop;
+            parser.clientConnectedDelegate = DataProviderClientConnectedWriter;
+            parser.clientDisconnectedDelegate = DataProviderClientDisconnectedWriter;
 
             sensor_position.SelectedIndex = sensor_position.FindStringExact("1 (bacino)");
             selectedSensor = sensor_position.SelectedIndex;
@@ -116,13 +118,12 @@ namespace Grapher
             // selected graph
             type_of_grph_cb.SelectedIndex = type_of_grph_cb.FindStringExact("Modulo");
             selectedGraph = type_of_grph_cb.SelectedIndex;
-
         }
 
         // evento di click sul tasto start server
         private void btn_server_start_Click(object sender, EventArgs e)
         {
-            if (parser.IsActive) {
+            if (parser.IsServerActive) {
                 parser.Stop(); // bloccante, mi crea problemi
                 // come usare il delegato di sampwin?? viene gia impostata alla chiamata di receive Data?
                 zedGraphControl1.GraphPane.CurveList.Clear();
@@ -143,7 +144,7 @@ namespace Grapher
                         Int32.Parse(port.Text),
                         String.Format("{0}.{1}.{2}.{3}", ip1.Text, ip2.Text, ip3.Text, ip4.Text)
                         );
-                    parser.serverStoppedDelegate = DataProviderServerDidStop;
+                    parser.Start();
                     threadParser = new Thread(new ThreadStart(parser.AcceptConnection));
                     threadParser.Start();
                 }
@@ -187,8 +188,12 @@ namespace Grapher
         private void btn_console_clear_Click(object sender, EventArgs e)
         {
             console.Text = "";
-            if (parser.IsActive) {
-                console.Text = "Server is Active.\n";
+            if (parser.IsServerActive) {
+                //console.Text = "Server is Active.\n";
+
+                console.Text = (String.Format("Server Started on port {0} at IP " +
+                    "{1}.{2}.{3}.{4}\n", port.Text, ip1.Text, ip2.Text, ip3.Text, ip4.Text));
+                printToServerConsole("Waiting for a connection ...\n");
             }
             else {
                 console.Text = "Server is Stopped.\n";
@@ -209,20 +214,24 @@ namespace Grapher
             }
         }
 
-         void DataProviderSampleWindowReceived(DataProvider dataProvider, List<Packet> sampwin)
+        void DataProviderClientDisconnectedWriter(DataProvider dataProvider, TcpClient aClient)
+        {
+            if (this.InvokeRequired) {
+                Invoke(new DataProviderClientDisconnected(DataProviderClientDisconnectedWriter), new object[] { dataProvider, aClient });
+            }
+            else {
+                // azione di scrivere che il client e'connesso, non funziona
+                printToServerConsole("Client disconnected!\n");
+            }
+        }
+
+        void DataProviderSampleWindowReceived(DataProvider dataProvider, List<Packet> sampwin)
         {
 
             if (this.InvokeRequired) {
                 Invoke(new DataProviderSampleWindow(DataProviderSampleWindowReceived), new object[] { dataProvider, sampwin });
             }
             else {
-                // esempio con modulo
-                // devo controllare subito quali sono le opzioni dell'utente,dato che viene richiamata dopo una decina di secondi
-                //samplewin = sampwin;
-                //smoothed = DataAnalysis.SmoothData(samplewin, 10);
-                //selected = smoothed;
-                //double[,] data = ExtractData();
-                //double[] modules = DataAnalysis.ComputeModules(data);
                 DisplayData(sampwin);
             }
         }
@@ -245,6 +254,8 @@ namespace Grapher
                 //checkBoxSaveCsv.Enabled = false;
                 btn_server_start.Text = "STOP";
                 //aggiungere scritta console
+                printToServerConsole(String.Format("Server Started on port {0} at IP " +
+                    "{1}.{2}.{3}.{4}\n", port.Text, ip1.Text, ip2.Text, ip3.Text, ip4.Text));
                 printToServerConsole("Waiting for a connection ...\n");
             }
 
@@ -284,6 +295,51 @@ namespace Grapher
             return e;
         }
 
+        private void EulerGraph()
+        {
+            int size = selected.Count;
+            double[,] data = new double[size, 4];
+            myPane.YAxis.Title.Text = "rad";
+
+            for (int i = 0; i < size; ++i) {
+                for (int j = 0; j < 4; ++j) {
+                    data[i, j] = selected[i].Sensors[selectedSensorType].q[j];
+                }
+            }
+
+            double[,] euler = DataAnalysis.ComputeEulerAngles(data);
+            double[,] eucont = DataAnalysis.RemoveDiscontinuities(euler);
+
+            double[] e0 = ExtractAngles(eucont, 0);
+            double[] e1 = ExtractAngles(eucont, 1);
+            double[] e2 = ExtractAngles(eucont, 2);
+            smooth = smoothing_cb.Checked;
+            if (!smooth) {
+                DisplayEuler(e0, "Roll", true, Color.Blue);
+                DisplayEuler(e1, "Pitch", false, Color.Green);
+                DisplayEuler(e2, "Yaw", false, Color.Red);
+            } else {
+                DisplayEuler(e0, "Roll Smoothed", true, Color.Blue);
+                DisplayEuler(e1, "Pitch Smoothed", false, Color.Green);
+                DisplayEuler(e2, "Yaw Smoothed", false, Color.Red);
+            }
+        }
+
+        private void DisplayEuler(double[] data, String label, Boolean clear, Color color)
+        {
+            // prima volta devo pulire?? altra funzione
+            //if (clear) { myPane.CurveList.Clear(); }
+            PointPairList plist = new PointPairList();
+            double t = 0;
+            for (int i = 0; i < data.Length; i++) {
+                plist.Add(new PointPair(t, data[i]));
+                t += 1.0 / frequence;
+            }
+            myPane.AddCurve(label, plist, color, SymbolType.None);
+            zedGraphControl1.AxisChange();
+            zedGraphControl1.Refresh();
+        }
+
         // non deve prendere un array di double, ma meglio una lista di packet. altrimenti
         // devo richiareextract data ogni volta che premo un qualsiasi bottone, meglio 
         // fare la chiamata allínterno di display data
@@ -297,6 +353,7 @@ namespace Grapher
             samplewin = sampwin;
             smoothed = DataAnalysis.SmoothData(samplewin, smoothRange);
             selected = smoothing_cb.Checked ? smoothed : samplewin;
+            smooth = smoothing_cb.Checked;
             double[,] data;
             myPane.CurveList.Clear();
             zedGraphControl1.Invalidate();
@@ -338,12 +395,15 @@ namespace Grapher
                     // module
                     //printToServerConsole("mod");
                     plist.Clear();
+                    double t = 0;
                     for (int i = 0; i < modules.Length; i++) {
-                        plist.Add(new PointPair(i, modules[i]));
+                        plist.Add(new PointPair(t, modules[i]));
+                        t += 1.0 / frequence;
                     }
                     // problemi con i titoli
                     myPane.Title.Text = "Module";
-                    myPane.AddCurve("Module", plist, Color.Blue, SymbolType.None);
+                    if (!smooth) { myPane.AddCurve("Module", plist, Color.Blue, SymbolType.None); }
+                    else { myPane.AddCurve("Module Smoothed", plist, Color.Blue, SymbolType.None); }
                     zedGraphControl1.AxisChange();
                     zedGraphControl1.Refresh();
                     break;
@@ -351,12 +411,15 @@ namespace Grapher
                     // der
                     //printToServerConsole("dev");
                     plist.Clear();
+                    t = 0;
                     double[] drv = DataAnalysis.ComputeDerivatives(modules, Int32.Parse(frequence_box.Text));
                     for (int i = 0; i < drv.Length; i++) {
-                        plist.Add(new PointPair(i, drv[i]));
+                        plist.Add(new PointPair(t, drv[i]));
+                        t += 1.0 / frequence;
                     }
                     myPane.Title.Text = "Derivated";
-                    myPane.AddCurve("Derivated", plist, Color.Blue, SymbolType.None);
+                    if (!smooth) { myPane.AddCurve("Derivated", plist, Color.Blue, SymbolType.None); }
+                    else { myPane.AddCurve("Derivated Smoothed", plist, Color.Blue, SymbolType.None); }
                     zedGraphControl1.AxisChange();
                     zedGraphControl1.Refresh();
                     break;
@@ -364,14 +427,21 @@ namespace Grapher
                     // std
                     //printToServerConsole("std");
                     plist.Clear();
-                    double[] dst = DataAnalysis.ComputeDerivatives(modules, smoothRange);
+                    t = 0;
+                    double[] dst = DataAnalysis.ComputeStandardDeviations(modules, smoothRange);
                     for (int i = 0; i < dst.Length; i++) {
-                        plist.Add(new PointPair(i, dst[i]));
+                        plist.Add(new PointPair(t, dst[i]));
+                        t += 1.0 / frequence;
                     }
                     myPane.Title.Text = "Standard Deviation";
-                    myPane.AddCurve("Standard Deviation", plist, Color.Blue, SymbolType.None);
+                    if (!smooth) { myPane.AddCurve("Standard Deviation", plist, Color.Blue, SymbolType.None); }
+                    else { myPane.AddCurve("Standard Deviation Smoothed", plist, Color.Blue, SymbolType.None); }
                     zedGraphControl1.AxisChange();
                     zedGraphControl1.Refresh();
+                    break;
+                case 3:
+                    // euler
+                    EulerGraph();
                     break;
             } 
         }
@@ -406,8 +476,11 @@ namespace Grapher
 
         private void smoothing_cb_CheckedChanged(object sender, EventArgs e)
         {
-            selected = smoothing_cb.Checked ? smoothed : samplewin;
-            DisplayData(samplewin);
+            if (samplewin != null) {
+                //selected = smoothing_cb.Checked ? smoothed : samplewin;
+                DisplayData(samplewin);
+            }
+            
         }
 
         private void sensor_type_SelectedIndexChanged(object sender, EventArgs e)

@@ -48,14 +48,16 @@ namespace Grapher
         private TcpListener server;
         private TcpClient client;
 
-        private Boolean isActive;
+        private Boolean isClientConnected;
+        private Boolean isServerActive;
 
         private int frequence;
         private int window;
 
         public int Port { get => port; }
         public IPAddress LocalAddr { get => localAddr; }
-        public bool IsActive { get => isActive; }
+        public bool IsClientConnected { get => isClientConnected; }
+        public bool IsServerActive { get => isServerActive; }
         public int Window { get => window; }
         public int Frequence { get => frequence; }
 
@@ -75,7 +77,8 @@ namespace Grapher
             {
                 ChangeFrequenceAndWindow(frequence, window);
                 SetAddressAndPort(port, localAddr);
-                this.isActive = false;
+                this.isClientConnected = false;
+                this.isServerActive = false;
             }
             catch
             {
@@ -91,7 +94,7 @@ namespace Grapher
 
         public void ChangeAddressAndPort(Int32 port, String localAddr)
         {
-            Stop();
+            if (isServerActive) { Stop(); }
             SetAddressAndPort(port, localAddr);
         }
 
@@ -101,36 +104,53 @@ namespace Grapher
             {
                 this.port = port;
                 this.localAddr = IPAddress.Parse(localAddr);
-                this.server = new TcpListener(this.localAddr, port);
-                this.server.Start();
             }
             catch (Exception ex)
             {
                 MessageBox.Show("IP Addressing Error!\n" + ex.Message);
-                this.isActive = false;
+                this.isClientConnected = false;
+                this.isServerActive = false;
                 throw;
+            }
+        }
+
+        public void Start()
+        {
+            if (!isServerActive) {
+                this.server = new TcpListener(this.localAddr, port);
+                this.server.Start();
+                this.isServerActive = true;
             }
         }
 
         public void AcceptConnection()
         {
-
-            try
-            {
-                serverStartedDelegate?.Invoke(this);
-                this.isActive = true;
-                client = server.AcceptTcpClient();
-                clientConnectedDelegate?.Invoke(this, client);
-                ReceiveData();
+            while (isServerActive) {
+                try {
+                    serverStartedDelegate?.Invoke(this);
+                    client = server.AcceptTcpClient();
+                    this.isClientConnected = true;
+                    clientConnectedDelegate?.Invoke(this, client);
+                    ReceiveData();
+                }
+                catch { }
+                finally {
+                    if (isClientConnected) {
+                        client.Close();
+                        this.isClientConnected = false;
+                        clientDisconnectedDelegate?.Invoke(this, client);
+                        client = null;
+                    }
+                }
             }
-            catch { }
         }
 
         public void Stop()
         {
-            if (client != null) { this.client.Close(); }
+            if (this.isClientConnected) { this.client.Close(); }
             this.server.Stop();
-            this.isActive = false;
+            this.isServerActive = false;
+            this.isClientConnected = false;
             serverStoppedDelegate?.Invoke(this);
         }
 
@@ -186,7 +206,7 @@ namespace Grapher
 
             byte[] rawData = bin.ReadBytes(dataLength + 1); // lettura dei dati
 
-            while (this.isActive && rawData.Count() != 0)
+            while (this.isClientConnected && rawData.Count() != 0)
             {
 
                 Packet packet = new Packet()
@@ -231,9 +251,6 @@ namespace Grapher
                 rawData = bin.ReadBytes(dataLength + 1);
             }
             samplewinDelegate?.Invoke(this, samplewin);
-            client.Close();
-            clientDisconnectedDelegate?.Invoke(this, client);
-            client = null;
         }
 
         private Packet ParsePacket(Packet packet, byte[] rawData)
