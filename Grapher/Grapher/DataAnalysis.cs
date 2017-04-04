@@ -196,7 +196,241 @@ namespace Grapher
             return euler;
         }
 
+        public static List<Packet> ComputeLowPass(List<Packet> sampwin)
+        {
+            int size = sampwin.Count();
+            int sensNum = sampwin.First().SensorsNumber;
+
+            List<Packet> lowfilter = new List<Packet>();
+
+            Packet pa1 = new Packet() {
+                SensorsNumber = sensNum,
+                Sensors = new Sensor[sensNum]
+            };
+            lowfilter.Add(pa1);
+
+            for (int s = 0; s < sensNum; s++) {
+                Sensor se = new Sensor();
+
+                se.acc = sampwin[0].Sensors[s].acc;
+                se.gyr = sampwin[0].Sensors[s].gyr;
+                se.mag = sampwin[0].Sensors[s].mag;
+                se.q = sampwin[0].Sensors[s].q;
+
+                pa1.Sensors[s] = se;
+            }
+
+            for (int p = 1; p < size; p++) {
+                Packet pa = new Packet() {
+                    SensorsNumber = sensNum,
+                    Sensors = new Sensor[sensNum]
+                };
+                lowfilter.Add(pa);
+
+                for (int s = 0; s < sensNum; s++) {
+                    Sensor se = new Sensor();
+
+                    se.acc = ComputeLowPass(sampwin[p].Sensors[s].acc, lowfilter[p - 1].Sensors[s].acc, 0.1);
+                    se.gyr = ComputeLowPass(sampwin[p].Sensors[s].gyr, lowfilter[p - 1].Sensors[s].gyr, 0.1);
+                    se.mag = ComputeLowPass(sampwin[p].Sensors[s].mag, lowfilter[p - 1].Sensors[s].mag, 0.1);
+                    se.q = ComputeLowPass(sampwin[p].Sensors[s].q, lowfilter[p - 1].Sensors[s].q, 0.1);
+
+                    pa.Sensors[s] = se;
+                }
+            }
+
+            return lowfilter;
+        }
+
+        private static double[] ComputeLowPass(double[] data, double[] prec, double a)
+        {
+            int size = data.Count();
+            double[] filteredValues = new double[size];
+            for (int i = 0; i < size; i++) {
+                filteredValues[i] = data[i] * a + prec[i] * (1.0 - a);
+            }
+            return filteredValues;
+        }
+
+        public static List<Packet> ComputeHighPass(List<Packet> sampwin)
+        {
+            int size = sampwin.Count();
+            int sensNum = sampwin.First().SensorsNumber;
+
+            List<Packet> lowfilter = new List<Packet>();
+
+            Packet pa1 = new Packet() {
+                SensorsNumber = sensNum,
+                Sensors = new Sensor[sensNum]
+            };
+            lowfilter.Add(pa1);
+
+            for (int s = 0; s < sensNum; s++) {
+                Sensor se = new Sensor();
+
+                se.acc = sampwin[0].Sensors[s].acc;
+                se.gyr = sampwin[0].Sensors[s].gyr;
+                se.mag = sampwin[0].Sensors[s].mag;
+                se.q = sampwin[0].Sensors[s].q;
+
+                pa1.Sensors[s] = se;
+            }
+
+            for (int p = 1; p < size; p++) {
+                Packet pa = new Packet() {
+                    SensorsNumber = sensNum,
+                    Sensors = new Sensor[sensNum]
+                };
+                lowfilter.Add(pa);
+
+                for (int s = 0; s < sensNum; s++) {
+                    Sensor se = new Sensor();
+
+                    se.acc = ComputeHighPass(sampwin[p].Sensors[s].acc, lowfilter[p - 1].Sensors[s].acc, 0.5);
+                    se.gyr = ComputeHighPass(sampwin[p].Sensors[s].gyr, lowfilter[p - 1].Sensors[s].gyr, 0.5);
+                    se.mag = ComputeHighPass(sampwin[p].Sensors[s].mag, lowfilter[p - 1].Sensors[s].mag, 0.5);
+                    se.q = ComputeHighPass(sampwin[p].Sensors[s].q, lowfilter[p - 1].Sensors[s].q, 0.5);
+
+                    pa.Sensors[s] = se;
+                }
+            }
+
+            return lowfilter;
+        }
+
+        private static double[] ComputeHighPass(double[] data, double[] prec, double a)
+        {
+            int size = data.Count();
+            double[] filteredValues = new double[size];
+            for (int i = 0; i < size; i++) {
+                filteredValues[i] = prec[i] * a + a * (data[i] - prec[i]);
+            }
+            return filteredValues;
+        }
+
         ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        //Dobbiamo prendere gia l' array con i dati del singolo sensore
+        //dobbiamo prendere in ingresso un parametro per la standard deviation che si sceglie dall' interfaccia
+
+        //Funzione MotoStazionamento, ritorna un array di Stringhe contentente lo stato di moto di ogni singola rilevazione
+        //"Fermo" oppure "In-Piedi"
+
+        public static String[] MotoStazionamento(double[,] providedData, int window)
+        {
+            double[] module = DataAnalysis.ComputeModules(providedData);
+            double[] sd = DataAnalysis.ComputeStandardDeviations(module, window);
+            int sd_size = sd.Count();
+            String[] state = new String[sd_size];
+            for (int i = 0; i < sd_size; i++) {
+                if (sd[i] <= 1)
+                    state[i] = "Fermo";
+                else
+                    state[i] = "Non-Fermo";
+            }
+            return state;
+        }
+
+        //FunzioneOrientamento prende in ingresso 2 array, corrispondenti all' asse y e z del magnetometro
+        //restituisce il valore theta della variazione di angoli senza salti
+
+        public static double[] FunzioneOrientamento(double[] y, double[] z)
+        {
+            int size = y.Count();
+            double[] theta = new double[size];
+            theta[0] = Math.Atan(y[0] / z[0]);
+            int[] sfasam = new int[size];
+            for (int i = 1; i < size; i++) {
+                double value = Math.Atan(y[i] / z[i]);
+                double diff = value - theta[i - 1];
+                //La differenza tra gli angoli deve essere minore di 2.5 se no e' considerata un salto
+                if (Math.Abs(diff) > 2.5) {
+                    if (diff > 0) {
+                        sfasam[i] -= 1;
+                    }
+                    else {
+                        sfasam[i] += 1;
+                    }
+                }
+                theta[i] = value + sfasam[i] * Math.PI;
+
+            }
+            return theta;
+        }
+
+        //Girata prende in ingresso un' array di due dimensioni [numero di pacchetto][asse x y z del magnetometro]
+        //
+
+        public static String[] Girata(double[,] providedData)
+        {
+
+            int size = providedData.GetLength(0);
+            double[] thetaArray = new double[size];
+            double[] yArray = new double[size];
+            double[] zArray = new double[size];
+            double[] gradesArray = new double[size];
+            String[] turnArray = new String[size];
+            for (int i = 0; i < size; i++) {
+                yArray[i] = providedData[i, 1];
+                zArray[i] = providedData[i, 2];
+            }
+
+            thetaArray = FunzioneOrientamento(yArray, zArray);
+            //Pi:180 = theta: x;
+            for (int i = 0; i < size; i++) {
+                gradesArray[i] = 180 * thetaArray[i] / Math.PI;
+            }
+            for (int i = 1; i < size; i++) {
+                double diff = Math.Round((gradesArray[i] - gradesArray[i - 1]), MidpointRounding.AwayFromZero);
+                //double diff = Math.Round(thetaArray[i] - thetaArray[i - 1], MidpointRounding.AwayFromZero);
+                //girata sinistra
+                // 10 gradi = 0.15 radianti
+                if (diff >= 10) {
+                    turnArray[i] = diff.ToString();
+                    //turnArray[i] = "Girata SX di °" + diff;
+                }
+                else if (diff <= -10) {
+                    turnArray[i] = diff.ToString();
+                    //turnArray[i] = "Girata DX di °" + -diff;
+                }
+                else turnArray[i] = "Continua ";
+            }
+
+            return turnArray;
+        }
+        //Metodo Lay/Stand/Sit, ritorna un array di Stringhe contenente lo stato di ogni singola rilevazione
+        //"Lay" o "LaySit" o "Sit" o "Stand"
+        //Prende in ingresso l' array delle x dell' accelerometro del PRIMO SENSORE
+        //perche' la x e' rivolta verso l' alto
+        //Per convenzione mettiamo l' uguale nei minori
+
+        public static String[] LayStandSit(double[] providedData)
+        {
+
+            int size = providedData.Count();
+            String[] state = new String[size];
+            for (int i = 0; i < size; i++) {
+                if (providedData[i] <= 2.7)
+                    state[i] = "Sdraiato";
+                else if (providedData[i] > 2.7 && providedData[i] <= 3.7)
+                    state[i] = "Sdraiato-Seduto";
+                else if (providedData[i] > 3.7 && providedData[i] <= 7)
+                    state[i] = "Seduto";
+                else if (providedData[i] > 7)
+                    state[i] = "In-Piedi";
+            }
+            return state;
+        }
+
+
+        public static double ComputeAverage(double[] vector)
+        {
+            double avg = 0;
+            for (int i = 0; i < vector.Count(); i++) {
+                avg += vector[i];
+            }
+            return avg / (vector.Count());
+        }
 
 
     }

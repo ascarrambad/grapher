@@ -61,6 +61,8 @@
             this.label_sensor_position = new System.Windows.Forms.Label();
             this.label_sensor_type = new System.Windows.Forms.Label();
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
+            this.checkBox1 = new System.Windows.Forms.CheckBox();
+            this.checkBox2 = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -101,6 +103,8 @@
             // 
             // splitContainer1.Panel2
             // 
+            this.splitContainer1.Panel2.Controls.Add(this.checkBox2);
+            this.splitContainer1.Panel2.Controls.Add(this.checkBox1);
             this.splitContainer1.Panel2.Controls.Add(this.type_of_grph_cb);
             this.splitContainer1.Panel2.Controls.Add(this.type_of_graph);
             this.splitContainer1.Panel2.Controls.Add(this.numericUpDown_smoothing);
@@ -111,7 +115,7 @@
             this.splitContainer1.Panel2.Controls.Add(this.label_sensor_position);
             this.splitContainer1.Panel2.Controls.Add(this.label_sensor_type);
             this.splitContainer1.Size = new System.Drawing.Size(1143, 611);
-            this.splitContainer1.SplitterDistance = 275;
+            this.splitContainer1.SplitterDistance = 254;
             this.splitContainer1.TabIndex = 0;
             // 
             // btn_console_clear
@@ -428,6 +432,28 @@
             this.label_sensor_type.TabIndex = 0;
             this.label_sensor_type.Text = "Sensor Type";
             // 
+            // checkBox1
+            // 
+            this.checkBox1.AutoSize = true;
+            this.checkBox1.Location = new System.Drawing.Point(303, 582);
+            this.checkBox1.Name = "checkBox1";
+            this.checkBox1.Size = new System.Drawing.Size(45, 17);
+            this.checkBox1.TabIndex = 11;
+            this.checkBox1.Text = "filtro";
+            this.checkBox1.UseVisualStyleBackColor = true;
+            this.checkBox1.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
+            // 
+            // checkBox2
+            // 
+            this.checkBox2.AutoSize = true;
+            this.checkBox2.Location = new System.Drawing.Point(388, 580);
+            this.checkBox2.Name = "checkBox2";
+            this.checkBox2.Size = new System.Drawing.Size(74, 17);
+            this.checkBox2.TabIndex = 12;
+            this.checkBox2.Text = "filtroBasso";
+            this.checkBox2.UseVisualStyleBackColor = true;
+            this.checkBox2.CheckedChanged += new System.EventHandler(this.checkBox2_CheckedChanged);
+            // 
             // Controller
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -435,7 +461,7 @@
             this.ClientSize = new System.Drawing.Size(1143, 611);
             this.Controls.Add(this.splitContainer1);
             this.Name = "Controller";
-            this.Text = "7";
+            this.Text = "Grapher";
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel1.PerformLayout();
             this.splitContainer1.Panel2.ResumeLayout(false);
@@ -482,6 +508,8 @@
         private System.Windows.Forms.Label label_sensor_type;
         private System.Windows.Forms.ComboBox type_of_grph_cb;
         private System.Windows.Forms.Label type_of_graph;
+        private System.Windows.Forms.CheckBox checkBox1;
+        private System.Windows.Forms.CheckBox checkBox2;
     }
 }
 

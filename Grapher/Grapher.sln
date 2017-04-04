@@ -5,14 +5,6 @@ VisualStudioVersion = 15.0.26228.9
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grapher", "Grapher\Grapher.csproj", "{2617730C-1807-4A37-825D-E252A6E73AC6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sense", "..\..\..\Sense-master\ProgettoGUI\Sense.csproj", "{6E5B6862-0F21-4AF9-A904-F5855B3CD5BD}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZedGraph BackEnd", "..\..\..\Sense-master\ZedGraph BackEnd\ZedGraph BackEnd.csproj", "{CA60B913-299C-4CF4-A815-F9F83C3A39A3}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GuiTest", "..\..\..\Sense-master\GuiTest\GuiTest.csproj", "{D975456D-87B8-4847-81E1-49BE4721F0EA}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZedGraphUsing", "..\..\..\..\Dropbox\Università\Anno III\1° Semestre\Programmazione e Amministrazione di Sistema - [PAS]\[PAS] C#\[PAS] C# - Esercizi\[PAS] C# - E6 - ZedGraphUsing\ZedGraphUsing\ZedGraphUsing.csproj", "{57932B85-172E-4BEE-BCE7-B70F271D2639}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,22 +15,6 @@ Global
 		{2617730C-1807-4A37-825D-E252A6E73AC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2617730C-1807-4A37-825D-E252A6E73AC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2617730C-1807-4A37-825D-E252A6E73AC6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6E5B6862-0F21-4AF9-A904-F5855B3CD5BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6E5B6862-0F21-4AF9-A904-F5855B3CD5BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6E5B6862-0F21-4AF9-A904-F5855B3CD5BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6E5B6862-0F21-4AF9-A904-F5855B3CD5BD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CA60B913-299C-4CF4-A815-F9F83C3A39A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CA60B913-299C-4CF4-A815-F9F83C3A39A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CA60B913-299C-4CF4-A815-F9F83C3A39A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CA60B913-299C-4CF4-A815-F9F83C3A39A3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D975456D-87B8-4847-81E1-49BE4721F0EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D975456D-87B8-4847-81E1-49BE4721F0EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D975456D-87B8-4847-81E1-49BE4721F0EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D975456D-87B8-4847-81E1-49BE4721F0EA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{57932B85-172E-4BEE-BCE7-B70F271D2639}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{57932B85-172E-4BEE-BCE7-B70F271D2639}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{57932B85-172E-4BEE-BCE7-B70F271D2639}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{57932B85-172E-4BEE-BCE7-B70F271D2639}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

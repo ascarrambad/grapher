@@ -21,6 +21,7 @@ namespace Grapher
         private List<Packet> samplewin;
         private List<Packet> selected;
         private List<Packet> smoothed;
+        private List<Packet> filtered;
         /// Thread nel quale gira il parser, o meglio la funzione che gestisce il Server.
         Thread threadParser;
         /// Frequenza di campionamento.
@@ -352,7 +353,19 @@ namespace Grapher
             // controllo se e' attivo lo smoothing!!
             samplewin = sampwin;
             smoothed = DataAnalysis.SmoothData(samplewin, smoothRange);
-            selected = smoothing_cb.Checked ? smoothed : samplewin;
+
+            filtered = smoothing_cb.Checked ? smoothed : samplewin;
+            if (checkBox1.Checked) {
+                selected = DataAnalysis.ComputeHighPass(filtered);
+            } else {
+                if (checkBox2.Checked) {
+                    selected = DataAnalysis.ComputeLowPass(filtered);
+                } else {
+                    selected = filtered;
+                }
+            }
+            //selected = checkBox1.Checked ? DataAnalysis.ComputeHighPass(filtered) : filtered;
+            //selected = checkBox2.Checked ? DataAnalysis.ComputeLowPass(filtered) : filtered;
             smooth = smoothing_cb.Checked;
             double[,] data;
             myPane.CurveList.Clear();
@@ -514,6 +527,26 @@ namespace Grapher
         {
             //selectedGraph = type_of_grph_cb.SelectedIndex;
             selectedSensor = sensor_position.SelectedIndex;
+            if (samplewin != null) {
+                DisplayData(samplewin);
+            }
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            // call function
+
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            if (samplewin != null) {
+                DisplayData(samplewin);
+            }
+        }
+
+        private void checkBox2_CheckedChanged(object sender, EventArgs e)
+        {
             if (samplewin != null) {
                 DisplayData(samplewin);
             }
