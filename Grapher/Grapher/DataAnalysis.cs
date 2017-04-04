@@ -190,25 +190,6 @@ namespace Grapher
                         }
                     }
                 }
-
-                /*if (data[i] < cutOff) {
-                    if (initialState != currentstate && changeState) {
-                        int next = (int)(i + 1 / freq * 0.25); // 0.25 e' un quarto di secondo
-                        if (data[next] < cutOff) {
-                            squared[i] = data[next];
-                        }
-                        else {
-                            // controllo il next di next
-                            int more = (int)(i + 1 / freq * 0.25);
-                            if (data[more] < cutOff) {
-                                squared[i] = squared[i - 1];
-                            }
-                            else {
-                                squared[i] = data[next];
-                            }
-                        }
-                    }
-                }*/
             }
             for (int i = size - last; i < size; ++i ) {
                 squared[i] = squared[i-1];
