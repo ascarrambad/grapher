@@ -304,7 +304,7 @@ namespace Grapher
 
             for (int i = 0; i < size; ++i) {
                 for (int j = 0; j < 4; ++j) {
-                    data[i, j] = selected[i].Sensors[selectedSensorType].q[j];
+                    data[i, j] = selected[i].Sensors[selectedSensor].q[j];
                 }
             }
 
@@ -535,6 +535,18 @@ namespace Grapher
             if (selectedGraph != 2) {
                 checkBox3.Enabled = false;
                 checkBox3.Checked = false;
+                sensor_type.Items.Clear(); // si potrebbe controllare il numero di item nella lista, se sono 3 agg Qua.
+                if (selectedGraph == 3) { 
+                    sensor_type.Items.AddRange(new object[] {
+                        "Qua"});
+                    sensor_type.SelectedIndex = sensor_type.FindStringExact("Qua");
+                } else {
+                    sensor_type.Items.AddRange(new object[] {
+                    "Acc",
+                    "Gyr",
+                    "Mag"});
+                    sensor_type.SelectedIndex = sensor_type.FindStringExact("Acc");
+                }
 
             } else { checkBox3.Enabled = true;
                     sensor_type.Items.Clear();
