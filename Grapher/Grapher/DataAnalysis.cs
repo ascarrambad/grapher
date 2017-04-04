@@ -149,9 +149,9 @@ namespace Grapher
             int currentstate = 0;
             Boolean changeState = false;
             int start = 10;
-            
+            int last = (int)(epsilon / (1 / (double)freq));
             // inizialmente salto i primi tot pacchetti
-            for (int i = start; i < size; ++i) { // -30 perche potrebbe andarmi in exception
+            for (int i = start; i < size - last; ++i) { // -30 perche potrebbe andarmi in exception
                 // e' cambiato lo stato attuale??
 
                 if (initialState == currentstate) {
@@ -171,7 +171,9 @@ namespace Grapher
                     } else {
                         if (data[i] < cutOff) {
                             //changeState = true;
-                            int next = (int)(i + 1 / freq * epsilon); // 0.25 e' un quarto di secondo
+                            double den = 1 / (double)freq;
+                            double rap = epsilon / den;
+                            int next = (int)(i + (int)rap); // 0.25 e' un quarto di secondo
                             if (data[next] < cutOff) {
                                 squared[i] = data[next];
                                 currentstate = 1;
@@ -180,7 +182,9 @@ namespace Grapher
                                 squared[i] = squared[i - 1]; // falso moto
                             }
                         } else {
-                            int next = (int)(i + 1 / freq * epsilon);
+                            double den = 1 / (double)freq;
+                            double rap = epsilon / den;
+                            int next = (int)(i + (int)rap);
                             if (data[next] > cutOff) {
                                 squared[i] = data[next];
                                 currentstate = 2;
@@ -210,6 +214,9 @@ namespace Grapher
                         }
                     }
                 }*/
+            }
+            for (int i = size - last; i < size; ++i ) {
+                squared[i] = squared[i-1];
             }
             return squared;
         }

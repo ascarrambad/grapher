@@ -351,6 +351,9 @@ namespace Grapher
         private void DisplayData(List<Packet> sampwin)
         {
             // controllo se e' attivo lo smoothing!!
+            if (smoothRange < 10) {
+                checkBox3.Enabled = false;
+            }
             samplewin = sampwin;
             smoothed = DataAnalysis.SmoothData(samplewin, smoothRange);
 
@@ -442,7 +445,17 @@ namespace Grapher
                     plist.Clear();
                     t = 0;
                     double[] dst0 = DataAnalysis.ComputeStandardDeviations(modules, smoothRange);
-                    double[] dst = checkBox3.Checked ? DataAnalysis.ComputeSquare(dst0, frequence, 0.53, 0.6) : dst0;
+                    double epsilon = 0.4;
+                    double cutOff = 0.53;
+                    // sotto i 10 non squadra nulla di corretto perche' e' troppo instabile, sopra il 25 tentenna. tra 10 e 25 ok
+                    if (smoothRange >= 10 && smoothRange < 20) {
+                        cutOff = 0.53;
+                    } else if (smoothRange >= 20 && smoothRange < 30) {
+                        cutOff = 0.33;
+                    } else {
+                        cutOff = 0.21;
+                    }
+                    double[] dst = checkBox3.Checked ? DataAnalysis.ComputeSquare(dst0, frequence, cutOff, epsilon) : dst0;
                     for (int i = 0; i < dst.Length; i++) {
                         plist.Add(new PointPair(t, dst[i]));
                         t += 1.0 / frequence;
@@ -519,6 +532,18 @@ namespace Grapher
         private void type_of_grph_cb_SelectedIndexChanged(object sender, EventArgs e)
         {
             selectedGraph = type_of_grph_cb.SelectedIndex;
+            if (selectedGraph != 2) {
+                checkBox3.Enabled = false;
+                checkBox3.Checked = false;
+
+            } else { checkBox3.Enabled = true;
+                    sensor_type.Items.Clear();
+                    sensor_type.Items.AddRange(new object[] {
+                    "Acc",
+                    "Gyr",
+                    "Mag"});
+                sensor_type.SelectedIndex = sensor_type.FindStringExact("Acc");
+            }
             if (samplewin != null) {
                 DisplayData(samplewin);
             }
