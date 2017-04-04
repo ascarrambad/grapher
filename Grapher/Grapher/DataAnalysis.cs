@@ -141,6 +141,79 @@ namespace Grapher
             return derivated;
         }
 
+        public static double[] ComputeSquare(double[] data, int freq , double cutOff, double epsilon)
+        {
+            int size = data.Count();
+            double[] squared = new double[size];
+            int initialState = 0;
+            int currentstate = 0;
+            Boolean changeState = false;
+            int start = 10;
+            
+            // inizialmente salto i primi tot pacchetti
+            for (int i = start; i < size; ++i) { // -30 perche potrebbe andarmi in exception
+                // e' cambiato lo stato attuale??
+
+                if (initialState == currentstate) {
+                    for (int k = 0; k <= start; ++k) {
+                        squared[k] = data[i];
+                    }
+                    
+                    currentstate = data[i] < cutOff ? 1 : 2;
+                }
+                else {
+                    // 1 <
+                    // 2 >
+
+                    if ((data[i] < cutOff && currentstate == 1) || (data[i] >= cutOff && currentstate == 2)) {
+                        // non ce cambio, non faccio niente
+                        squared[i] = squared[i - 1];
+                    } else {
+                        if (data[i] < cutOff) {
+                            //changeState = true;
+                            int next = (int)(i + 1 / freq * epsilon); // 0.25 e' un quarto di secondo
+                            if (data[next] < cutOff) {
+                                squared[i] = data[next];
+                                currentstate = 1;
+                                changeState = true;
+                            } else {
+                                squared[i] = squared[i - 1]; // falso moto
+                            }
+                        } else {
+                            int next = (int)(i + 1 / freq * epsilon);
+                            if (data[next] > cutOff) {
+                                squared[i] = data[next];
+                                currentstate = 2;
+                                changeState = true;
+                            } else {
+                                squared[i] = squared[i - 1];
+                            }
+                        }
+                    }
+                }
+
+                /*if (data[i] < cutOff) {
+                    if (initialState != currentstate && changeState) {
+                        int next = (int)(i + 1 / freq * 0.25); // 0.25 e' un quarto di secondo
+                        if (data[next] < cutOff) {
+                            squared[i] = data[next];
+                        }
+                        else {
+                            // controllo il next di next
+                            int more = (int)(i + 1 / freq * 0.25);
+                            if (data[more] < cutOff) {
+                                squared[i] = squared[i - 1];
+                            }
+                            else {
+                                squared[i] = data[next];
+                            }
+                        }
+                    }
+                }*/
+            }
+            return squared;
+        }
+
         // Euler angles
 
         public static double[,] RemoveDiscontinuities(double[,] data)

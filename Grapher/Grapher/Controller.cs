@@ -441,7 +441,8 @@ namespace Grapher
                     //printToServerConsole("std");
                     plist.Clear();
                     t = 0;
-                    double[] dst = DataAnalysis.ComputeStandardDeviations(modules, smoothRange);
+                    double[] dst0 = DataAnalysis.ComputeStandardDeviations(modules, smoothRange);
+                    double[] dst = checkBox3.Checked ? DataAnalysis.ComputeSquare(dst0, frequence, 0.53, 0.6) : dst0;
                     for (int i = 0; i < dst.Length; i++) {
                         plist.Add(new PointPair(t, dst[i]));
                         t += 1.0 / frequence;
@@ -546,6 +547,13 @@ namespace Grapher
         }
 
         private void checkBox2_CheckedChanged(object sender, EventArgs e)
+        {
+            if (samplewin != null) {
+                DisplayData(samplewin);
+            }
+        }
+
+        private void checkBox3_CheckedChanged(object sender, EventArgs e)
         {
             if (samplewin != null) {
                 DisplayData(samplewin);
