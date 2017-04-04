@@ -460,9 +460,9 @@ namespace Grapher
                         plist.Add(new PointPair(t, dst[i]));
                         t += 1.0 / frequence;
                     }
-                    myPane.Title.Text = "Standard Deviation";
-                    if (!smooth) { myPane.AddCurve("Standard Deviation", plist, Color.Blue, SymbolType.None); }
-                    else { myPane.AddCurve("Standard Deviation Smoothed", plist, Color.Blue, SymbolType.None); }
+                    myPane.Title.Text = "Module Standard Deviation";
+                    if (!smooth) { myPane.AddCurve("Module Standard Deviation", plist, Color.Blue, SymbolType.None); }
+                    else { myPane.AddCurve("Smoothed Module Standard Deviation", plist, Color.Blue, SymbolType.None); }
                     zedGraphControl1.AxisChange();
                     zedGraphControl1.Refresh();
                     break;
@@ -558,14 +558,10 @@ namespace Grapher
             }
         }
 
-        private void button1_Click(object sender, EventArgs e)
-        {
-            // call function
-
-        }
 
         private void checkBox1_CheckedChanged(object sender, EventArgs e)
         {
+            if (checkBox1.Checked == true) { checkBox2.Checked = false; }
             if (samplewin != null) {
                 DisplayData(samplewin);
             }
@@ -573,6 +569,7 @@ namespace Grapher
 
         private void checkBox2_CheckedChanged(object sender, EventArgs e)
         {
+            if (checkBox2.Checked == true) { checkBox1.Checked = false; }
             if (samplewin != null) {
                 DisplayData(samplewin);
             }
@@ -580,6 +577,8 @@ namespace Grapher
 
         private void checkBox3_CheckedChanged(object sender, EventArgs e)
         {
+            checkBox1.Checked = false;
+            checkBox2.Checked = false;
             if (samplewin != null) {
                 DisplayData(samplewin);
             }

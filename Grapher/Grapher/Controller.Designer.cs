@@ -117,12 +117,12 @@
             this.splitContainer1.Panel2.Controls.Add(this.label_sensor_position);
             this.splitContainer1.Panel2.Controls.Add(this.label_sensor_type);
             this.splitContainer1.Size = new System.Drawing.Size(1143, 611);
-            this.splitContainer1.SplitterDistance = 254;
+            this.splitContainer1.SplitterDistance = 271;
             this.splitContainer1.TabIndex = 0;
             // 
             // btn_console_clear
             // 
-            this.btn_console_clear.Location = new System.Drawing.Point(92, 576);
+            this.btn_console_clear.Location = new System.Drawing.Point(12, 575);
             this.btn_console_clear.Name = "btn_console_clear";
             this.btn_console_clear.Size = new System.Drawing.Size(75, 23);
             this.btn_console_clear.TabIndex = 19;
@@ -142,7 +142,7 @@
             // 
             // numericUpDownWindow
             // 
-            this.numericUpDownWindow.Location = new System.Drawing.Point(93, 208);
+            this.numericUpDownWindow.Location = new System.Drawing.Point(93, 183);
             this.numericUpDownWindow.Name = "numericUpDownWindow";
             this.numericUpDownWindow.Size = new System.Drawing.Size(60, 20);
             this.numericUpDownWindow.TabIndex = 17;
@@ -155,7 +155,7 @@
             // window_l
             // 
             this.window_l.AutoSize = true;
-            this.window_l.Location = new System.Drawing.Point(18, 210);
+            this.window_l.Location = new System.Drawing.Point(18, 185);
             this.window_l.Name = "window_l";
             this.window_l.Size = new System.Drawing.Size(46, 13);
             this.window_l.TabIndex = 16;
@@ -164,7 +164,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(159, 173);
+            this.label1.Location = new System.Drawing.Point(159, 148);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(20, 13);
             this.label1.TabIndex = 15;
@@ -177,7 +177,7 @@
             "50",
             "100",
             "200"});
-            this.frequence_box.Location = new System.Drawing.Point(93, 170);
+            this.frequence_box.Location = new System.Drawing.Point(93, 145);
             this.frequence_box.Name = "frequence_box";
             this.frequence_box.Size = new System.Drawing.Size(60, 21);
             this.frequence_box.TabIndex = 14;
@@ -185,7 +185,7 @@
             // frequence_l
             // 
             this.frequence_l.AutoSize = true;
-            this.frequence_l.Location = new System.Drawing.Point(15, 170);
+            this.frequence_l.Location = new System.Drawing.Point(15, 145);
             this.frequence_l.Name = "frequence_l";
             this.frequence_l.Size = new System.Drawing.Size(58, 13);
             this.frequence_l.TabIndex = 13;
@@ -194,7 +194,7 @@
             // ip
             // 
             this.ip.AutoSize = true;
-            this.ip.Location = new System.Drawing.Point(15, 136);
+            this.ip.Location = new System.Drawing.Point(15, 111);
             this.ip.Name = "ip";
             this.ip.Size = new System.Drawing.Size(17, 13);
             this.ip.TabIndex = 12;
@@ -202,7 +202,7 @@
             // 
             // ip4
             // 
-            this.ip4.Location = new System.Drawing.Point(243, 132);
+            this.ip4.Location = new System.Drawing.Point(243, 107);
             this.ip4.Name = "ip4";
             this.ip4.Size = new System.Drawing.Size(26, 20);
             this.ip4.TabIndex = 11;
@@ -211,7 +211,7 @@
             // _dot3
             // 
             this._dot3.AutoSize = true;
-            this._dot3.Location = new System.Drawing.Point(226, 140);
+            this._dot3.Location = new System.Drawing.Point(226, 115);
             this._dot3.Name = "_dot3";
             this._dot3.Size = new System.Drawing.Size(10, 13);
             this._dot3.TabIndex = 10;
@@ -219,7 +219,7 @@
             // 
             // ip3
             // 
-            this.ip3.Location = new System.Drawing.Point(194, 133);
+            this.ip3.Location = new System.Drawing.Point(194, 108);
             this.ip3.Name = "ip3";
             this.ip3.Size = new System.Drawing.Size(26, 20);
             this.ip3.TabIndex = 9;
@@ -228,7 +228,7 @@
             // _dot2
             // 
             this._dot2.AutoSize = true;
-            this._dot2.Location = new System.Drawing.Point(178, 140);
+            this._dot2.Location = new System.Drawing.Point(178, 115);
             this._dot2.Name = "_dot2";
             this._dot2.Size = new System.Drawing.Size(10, 13);
             this._dot2.TabIndex = 8;
@@ -236,7 +236,7 @@
             // 
             // ip2
             // 
-            this.ip2.Location = new System.Drawing.Point(141, 133);
+            this.ip2.Location = new System.Drawing.Point(141, 108);
             this.ip2.Name = "ip2";
             this.ip2.Size = new System.Drawing.Size(26, 20);
             this.ip2.TabIndex = 7;
@@ -245,7 +245,7 @@
             // _dot1
             // 
             this._dot1.AutoSize = true;
-            this._dot1.Location = new System.Drawing.Point(125, 140);
+            this._dot1.Location = new System.Drawing.Point(125, 115);
             this._dot1.Name = "_dot1";
             this._dot1.Size = new System.Drawing.Size(10, 13);
             this._dot1.TabIndex = 6;
@@ -253,7 +253,7 @@
             // 
             // ip1
             // 
-            this.ip1.Location = new System.Drawing.Point(93, 133);
+            this.ip1.Location = new System.Drawing.Point(93, 108);
             this.ip1.Name = "ip1";
             this.ip1.Size = new System.Drawing.Size(26, 20);
             this.ip1.TabIndex = 5;
@@ -262,7 +262,7 @@
             // label_port
             // 
             this.label_port.AutoSize = true;
-            this.label_port.Location = new System.Drawing.Point(15, 101);
+            this.label_port.Location = new System.Drawing.Point(15, 76);
             this.label_port.Name = "label_port";
             this.label_port.Size = new System.Drawing.Size(26, 13);
             this.label_port.TabIndex = 4;
@@ -270,7 +270,7 @@
             // 
             // port
             // 
-            this.port.Location = new System.Drawing.Point(93, 97);
+            this.port.Location = new System.Drawing.Point(93, 72);
             this.port.Name = "port";
             this.port.Size = new System.Drawing.Size(39, 20);
             this.port.TabIndex = 3;
@@ -278,7 +278,7 @@
             // 
             // csv_path
             // 
-            this.csv_path.Location = new System.Drawing.Point(12, 270);
+            this.csv_path.Location = new System.Drawing.Point(12, 231);
             this.csv_path.Name = "csv_path";
             this.csv_path.Size = new System.Drawing.Size(194, 20);
             this.csv_path.TabIndex = 2;
@@ -286,7 +286,7 @@
             // 
             // buttonSelectFolder
             // 
-            this.buttonSelectFolder.Location = new System.Drawing.Point(212, 270);
+            this.buttonSelectFolder.Location = new System.Drawing.Point(212, 231);
             this.buttonSelectFolder.Name = "buttonSelectFolder";
             this.buttonSelectFolder.Size = new System.Drawing.Size(24, 22);
             this.buttonSelectFolder.TabIndex = 22;
@@ -296,7 +296,7 @@
             // 
             // btn_server_start
             // 
-            this.btn_server_start.Location = new System.Drawing.Point(93, 305);
+            this.btn_server_start.Location = new System.Drawing.Point(93, 257);
             this.btn_server_start.Name = "btn_server_start";
             this.btn_server_start.Size = new System.Drawing.Size(75, 23);
             this.btn_server_start.TabIndex = 1;
@@ -309,9 +309,9 @@
             this.console.BackColor = System.Drawing.SystemColors.MenuText;
             this.console.Font = new System.Drawing.Font("Comic Sans MS", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.console.ForeColor = System.Drawing.Color.DeepSkyBlue;
-            this.console.Location = new System.Drawing.Point(12, 343);
+            this.console.Location = new System.Drawing.Point(12, 286);
             this.console.Name = "console";
-            this.console.Size = new System.Drawing.Size(251, 212);
+            this.console.Size = new System.Drawing.Size(257, 283);
             this.console.TabIndex = 0;
             this.console.Text = "";
             // 
@@ -461,9 +461,9 @@
             this.checkBox3.AutoSize = true;
             this.checkBox3.Location = new System.Drawing.Point(466, 581);
             this.checkBox3.Name = "checkBox3";
-            this.checkBox3.Size = new System.Drawing.Size(60, 17);
+            this.checkBox3.Size = new System.Drawing.Size(75, 17);
             this.checkBox3.TabIndex = 13;
-            this.checkBox3.Text = "Square";
+            this.checkBox3.Text = "Square off";
             this.checkBox3.UseVisualStyleBackColor = true;
             this.checkBox3.CheckedChanged += new System.EventHandler(this.checkBox3_CheckedChanged);
             // 
