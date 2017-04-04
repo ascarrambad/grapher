@@ -147,7 +147,6 @@ namespace Grapher
             double[] squared = new double[size];
             int initialState = 0;
             int currentstate = 0;
-            Boolean changeState = false;
             int start = 10;
             int last = (int)(epsilon / (1 / (double)freq));
             // inizialmente salto i primi tot pacchetti
@@ -158,7 +157,6 @@ namespace Grapher
                     for (int k = 0; k <= start; ++k) {
                         squared[k] = data[i];
                     }
-                    
                     currentstate = data[i] < cutOff ? 1 : 2;
                 }
                 else {
@@ -170,14 +168,12 @@ namespace Grapher
                         squared[i] = squared[i - 1];
                     } else {
                         if (data[i] < cutOff) {
-                            //changeState = true;
                             double den = 1 / (double)freq;
                             double rap = epsilon / den;
                             int next = (int)(i + (int)rap); // 0.25 e' un quarto di secondo
                             if (data[next] < cutOff) {
                                 squared[i] = data[next];
                                 currentstate = 1;
-                                changeState = true;
                             } else {
                                 squared[i] = squared[i - 1]; // falso moto
                             }
@@ -188,7 +184,6 @@ namespace Grapher
                             if (data[next] > cutOff) {
                                 squared[i] = data[next];
                                 currentstate = 2;
-                                changeState = true;
                             } else {
                                 squared[i] = squared[i - 1];
                             }
