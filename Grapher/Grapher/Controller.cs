@@ -166,7 +166,7 @@ namespace Grapher
                 Invoke(new printToServerConsoleDelegate(printToServerConsole), new object[] { s });
             }
             else {
-                console.AppendText(s);
+                console.AppendText(s);// eccezione se spento male
                 // auto scroll 
                 //if (.Checked)
                 //{
@@ -323,6 +323,8 @@ namespace Grapher
                 DisplayEuler(e1, "Pitch Smoothed", false, Color.Green);
                 DisplayEuler(e2, "Yaw Smoothed", false, Color.Red);
             }
+            zedGraphControl1.AxisChange();
+            zedGraphControl1.Refresh();
         }
 
         private void DisplayEuler(double[] data, String label, Boolean clear, Color color)
@@ -336,8 +338,6 @@ namespace Grapher
                 t += 1.0 / frequence;
             }
             myPane.AddCurve(label, plist, color, SymbolType.None);
-            zedGraphControl1.AxisChange();
-            zedGraphControl1.Refresh();
         }
 
         // non deve prendere un array di double, ma meglio una lista di packet. altrimenti
