@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ZedGraph;
 
 namespace Grapher
 {
@@ -362,6 +363,112 @@ namespace Grapher
                 filteredValues[i] = prec[i] * a + a * (data[i] - prec[i]);
             }
             return filteredValues;
+        }
+
+        public static PointPairList ComputeDeadReckoning(double[,] q0, double[,] acc, double[,] mag, int freq, int win)
+        {
+
+            int size = q0.GetLength(0);
+
+            int fattoreRealismoGimConJak = 4;
+            double[,] euler = ComputeEulerAngles(q0);
+            double[,] eucont = RemoveDiscontinuities(euler);
+
+            double[] theta = new double[size];
+            for (int i = 0; i < size; i++)
+            {
+                theta[i] = eucont[i, 2];
+            }
+            double[] pitch = new double[size];
+            for (int i = 0; i < size; i++)
+            {
+                pitch[i] = eucont[i, 1];
+            }
+
+            PointPairList p = new PointPairList();
+            double[] x = new double[size];
+            double[] y = new double[size];
+            double ds = 0;
+            double t = 1 / (double)freq;
+            double dx, dy, v0 = 1;
+
+            x[0] = 0;
+            y[0] = 0;
+
+            double[] accy = new double[size];
+
+            for (int i = 0; i < size; i++)
+            {
+                accy[i] = acc[i, 1];
+            }
+
+            double[] magy = new double[size];
+            double[] magz = new double[size];
+
+            for (int i = 0; i < size; i++)
+            {
+                magy[i] = mag[i, 1];
+                magz[i] = mag[i, 2];
+            }
+
+            double[] dev = ComputeStandardDeviations(accy, win);
+            String[] moto = MotoStazionamento(acc, win);
+            double[] deg = FunzioneOrientamento(magy, magz);
+
+            double theta1 = theta[0];
+            for (int i = 1; i < size; i++)
+            {
+
+                v0 = dev[i];
+                if (moto[i] != "Fermo")
+                {
+                    ds = v0 * t;
+                }
+                else
+                {
+                    ds = 0;
+                }
+                if (Math.Abs(theta1 - theta[i - 1]) > (Math.PI / 180 * deg[i]))
+                    theta1 = theta[i - 1];
+                //scomponimento dx lungo le sue componenti grazie all'angolo ecc
+                dx = ds * Math.Cos(theta1) * fattoreRealismoGimConJak;
+                dy = ds * Math.Sin(theta1) * fattoreRealismoGimConJak;
+
+                x[i] = x[i - 1] + dx;
+                y[i] = y[i - 1] + dy;
+
+
+            }
+
+            x = SmoothSample(x, 50);
+            y = SmoothSample(y, 50);
+            for (int i = 0; i < size; i++) { p.Add(x[i], y[i]); }
+
+            return p;
+        }
+
+        private static double[] SmoothSample(double[] data, int range)
+        {
+            int size = data.Count();
+            double[] smoothed = new double[size];
+
+            for (int p = 0; p < size; p++)
+            {
+                int sx = Math.Max(0, p - range);
+                int dx = Math.Min(size - 1, p + range);
+                double winSize = dx - sx + 1;
+                double mean = 0;
+
+                for (int m = sx; m <= dx; m++)
+                {
+                    mean += data[m];
+                }
+
+                smoothed[p] = mean / winSize;
+            }
+
+
+            return smoothed;
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
