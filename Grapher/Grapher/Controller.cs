@@ -93,7 +93,16 @@ namespace Grapher
             this.frequence_box.SelectedIndex = frequence_box.FindStringExact("50");
             frequence = Int32.Parse(frequence_box.Text);
             // csv location ... da completare
-            //csvPath = Directory.GetCurrentDirectory() + @"\_output";
+            csvPath = Directory.GetCurrentDirectory() + @"\_own_output";
+            try
+            {
+                System.IO.Directory.CreateDirectory(csvPath);
+            }
+            catch (Exception e)
+            {
+                printToServerConsole("Impossibile creare la cartella " + csvPath + "\n");
+            }
+            csv_path.Text = csvPath;
 
             // numeric smooting max value
             numericUpDown_smoothing.Maximum = Math.Floor((decimal)(window * frequence / 2));
@@ -230,9 +239,9 @@ namespace Grapher
                 double[,] acc = ExtractData(10, 0, 0);
                 String[] motoStaz = DataAnalysis.MotoStazionamento(acc, window);
 
-                string path = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                System.IO.File.WriteAllText(path + @"\output.txt", "Moto stazionamento:");
-                System.IO.File.WriteAllLines(path + @"\output1.txt", motoStaz);
+                //string path = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                //System.IO.File.WriteAllText(csvPath + @"\output.txt", "Moto stazionamento:");
+                System.IO.File.WriteAllLines(csvPath + @"\output1.txt", motoStaz);
                 // do a Luca ...
 
                 // lat/sit/stand
@@ -247,8 +256,8 @@ namespace Grapher
 
                 String[] layStandSit = DataAnalysis.LayStandSit(accX);
 
-                System.IO.File.WriteAllText(path + @"\output.txt", "lay Stand Sit:");
-                System.IO.File.WriteAllLines(path + @"\output2.txt", layStandSit);
+                //System.IO.File.WriteAllText(csvPath + @"\output.txt", "lay Stand Sit:");
+                System.IO.File.WriteAllLines(csvPath + @"\output2.txt", layStandSit);
 
                 // passo a Luca ... 
 
@@ -256,14 +265,14 @@ namespace Grapher
 
                 double[,] mag = ExtractData(10, 2, 0);
                 double[] girate = DataAnalysis.Girata(mag);
-                System.IO.File.WriteAllText(path + @"\output3.txt", "Girate:");
+                //System.IO.File.WriteAllText(csvPath + @"\output3.txt", "Girate:");
 
                 String[] test = new String[girate.Count()];
                 for (int i = 0; i < girate.Count(); ++i)
                 {
                     test[i] = girate[i].ToString();
                 }
-                System.IO.File.WriteAllLines(path + @"\output3.txt", test);
+                System.IO.File.WriteAllLines(csvPath + @"\output3.txt", test);
 
                 // passo a Luca ... 
 
