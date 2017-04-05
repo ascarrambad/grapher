@@ -190,7 +190,7 @@ namespace Grapher
         {
             DialogResult result = folderBrowserDialog1.ShowDialog();
             if (result == DialogResult.OK) {
-                csvPath = folderBrowserDialog1.SelectedPath;
+                csvPath = folderBrowserDialog1.SelectedPath; // qua si potrebbe aggiungere una cartella predefinita dove inserire i 2 file, oppure far decidere all'utente di crearla o no
                 csv_path.Text = csvPath;
             }
         }
