@@ -370,7 +370,6 @@ namespace Grapher
 
             int size = q0.GetLength(0);
 
-            int fattoreRealismoGimConJak = 4;
             double[,] euler = ComputeEulerAngles(q0);
             double[,] eucont = RemoveDiscontinuities(euler);
 
@@ -431,8 +430,8 @@ namespace Grapher
                 if (Math.Abs(theta1 - theta[i - 1]) > (Math.PI / 180 * deg[i,0]))
                     theta1 = theta[i - 1];
                 //scomponimento dx lungo le sue componenti grazie all'angolo ecc
-                dx = ds * Math.Cos(theta1) * fattoreRealismoGimConJak;
-                dy = ds * Math.Sin(theta1) * fattoreRealismoGimConJak;
+                dx = ds * Math.Cos(theta1);
+                dy = ds * Math.Sin(theta1);
 
                 x[i] = x[i - 1] + dx;
                 y[i] = y[i - 1] + dy;

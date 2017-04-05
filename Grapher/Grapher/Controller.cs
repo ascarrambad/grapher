@@ -241,7 +241,7 @@ namespace Grapher
 
                 //string path = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
                 //System.IO.File.WriteAllText(csvPath + @"\output.txt", "Moto stazionamento:");
-                System.IO.File.WriteAllLines(csvPath + @"\output1.txt", motoStaz);
+                //System.IO.File.WriteAllLines(csvPath + @"\output1.txt", motoStaz);
                 // do a Luca ...
 
                 // lat/sit/stand
@@ -257,7 +257,7 @@ namespace Grapher
                 String[] layStandSit = DataAnalysis.LayStandSit(accX);
 
                 //System.IO.File.WriteAllText(csvPath + @"\output.txt", "lay Stand Sit:");
-                System.IO.File.WriteAllLines(csvPath + @"\output2.txt", layStandSit);
+                //System.IO.File.WriteAllLines(csvPath + @"\output2.txt", layStandSit);
 
                 // passo a Luca ... 
 
@@ -272,9 +272,12 @@ namespace Grapher
                 {
                     test[i] = girate[i].ToString();
                 }
-                System.IO.File.WriteAllLines(csvPath + @"\output3.txt", test);
+                //System.IO.File.WriteAllLines(csvPath + @"\output3.txt", test);
 
-                // passo a Luca ... 
+                // passo a Luca ...
+                DataWriter.DataWrite(motoStaz, layStandSit, girate, frequence, csvPath);
+                if (samplewin != null) { DataWriter.PrintPacketsToFile(samplewin, csvPath); }
+                
 
             }
         }
