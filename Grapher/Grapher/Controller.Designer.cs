@@ -362,17 +362,19 @@
             "Derivata",
             "Deviazione",
             "Eulero",
-            "Dead Reckoning"});
-            this.type_of_grph_cb.Location = new System.Drawing.Point(66, 16);
+            "Dead Reckoning",
+            "ArcTan(magY/magZ)",
+            "Modulo acc X"});
+            this.type_of_grph_cb.Location = new System.Drawing.Point(42, 16);
             this.type_of_grph_cb.Name = "type_of_grph_cb";
-            this.type_of_grph_cb.Size = new System.Drawing.Size(100, 21);
+            this.type_of_grph_cb.Size = new System.Drawing.Size(124, 21);
             this.type_of_grph_cb.TabIndex = 9;
             this.type_of_grph_cb.SelectedIndexChanged += new System.EventHandler(this.type_of_grph_cb_SelectedIndexChanged);
             // 
             // type_of_graph
             // 
             this.type_of_graph.AutoSize = true;
-            this.type_of_graph.Location = new System.Drawing.Point(24, 20);
+            this.type_of_graph.Location = new System.Drawing.Point(0, 20);
             this.type_of_graph.Name = "type_of_graph";
             this.type_of_graph.Size = new System.Drawing.Size(36, 13);
             this.type_of_graph.TabIndex = 21;

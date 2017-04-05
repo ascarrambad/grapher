@@ -39,7 +39,7 @@ namespace Grapher
         /// Path in cui salvare il file csv/actions_log.
         string csvPath;
         /// Sampwin salvata in locale dopo che il server viene stoppato per poter disegnare ancora i grafici relativi a quel campione.
-        List<double[,]> mySampwin;
+        //List<double[,]> mySampwin;
         /// Range per lo smoothing: anche raggio dell'intorno in cui guardare per fare la media per la deviazione standard.
         int smoothRange = 10;
         Boolean smooth;
@@ -223,6 +223,50 @@ namespace Grapher
             else {
                 // azione di scrivere che il client e'connesso, non funziona
                 printToServerConsole("Client disconnected!\n");
+                // chiamo le chiamate per analizzare le azioni e scrivere
+
+                // moto stazionamento: acc x y z
+
+                double[,] acc = ExtractData(10, 0, 0);
+                String[] motoStaz = DataAnalysis.MotoStazionamento(acc, window);
+
+                string path = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                System.IO.File.WriteAllText(path + @"\output.txt", "Moto stazionamento:");
+                System.IO.File.WriteAllLines(path + @"\output1.txt", motoStaz);
+                // do a Luca ...
+
+                // lat/sit/stand
+                acc = ExtractData(20, 0, 0);
+                int size = acc.GetLength(0);
+                double[] accX = new double[size];
+
+                for (int i = 0; i < size; i++)
+                {
+                    accX[i] = acc[i, 0];
+                }
+
+                String[] layStandSit = DataAnalysis.LayStandSit(accX);
+
+                System.IO.File.WriteAllText(path + @"\output.txt", "lay Stand Sit:");
+                System.IO.File.WriteAllLines(path + @"\output2.txt", layStandSit);
+
+                // passo a Luca ... 
+
+                // girata
+
+                double[,] mag = ExtractData(10, 2, 0);
+                double[] girate = DataAnalysis.Girata(mag);
+                System.IO.File.WriteAllText(path + @"\output3.txt", "Girate:");
+
+                String[] test = new String[girate.Count()];
+                for (int i = 0; i < girate.Count(); ++i)
+                {
+                    test[i] = girate[i].ToString();
+                }
+                System.IO.File.WriteAllLines(path + @"\output3.txt", test);
+
+                // passo a Luca ... 
+
             }
         }
 
@@ -367,8 +411,6 @@ namespace Grapher
                     selected = filtered;
                 }
             }
-            //selected = checkBox1.Checked ? DataAnalysis.ComputeHighPass(filtered) : filtered;
-            //selected = checkBox2.Checked ? DataAnalysis.ComputeLowPass(filtered) : filtered;
             smooth = smoothing_cb.Checked;
             double[,] data;
             myPane.CurveList.Clear();
@@ -481,7 +523,140 @@ namespace Grapher
                     // euler
                     EulerGraph();
                     break;
+                case 4:
+                    // dead
+                    int size = samplewin.Count;
+
+                    double[,] q0 = new double[size, 4];
+
+                    for (int p = 0; p < size; p++)
+                    {
+                        for (int i = 0; i < 4; i++)
+                        {
+                            q0[p, i] = samplewin[p].Sensors[0].q[i];
+                        }
+                    }
+
+                    double[,] acc = new double[size, 3];
+
+                    for (int p = 0; p < size; p++)
+                    {
+                        for (int i = 0; i < 3; i++)
+                        {
+                            acc[p, i] = samplewin[p].Sensors[0].acc[i];
+                        }
+                    }
+
+                    double[,] mag = new double[size, 3];
+
+                    for (int p = 0; p < size; p++)
+                    {
+                        for (int i = 0; i < 3; i++)
+                        {
+                            mag[p, i] = samplewin[p].Sensors[0].mag[i];
+                        }
+                    }
+
+
+                    PointPairList dead = DataAnalysis.ComputeDeadReckoning(q0, acc, mag, frequence, window);
+
+                    GraphPane pane = zedGraphControl1.GraphPane;
+                    pane.CurveList.Clear();
+
+                    pane.AddCurve("Prova", dead, Color.Red, SymbolType.None);
+                    zedGraphControl1.AxisChange();
+                    zedGraphControl1.Refresh();
+                    break;
+
+                case 5:
+                    // arc tan
+                    plist.Clear();
+                    t = 0;
+                    mag = ExtractData(2, selectedSensor);
+                    size = mag.GetLength(0);
+                    double[] magY = new double[size];
+                    double[] magZ = new double[size];
+
+                    for (int i = 0; i < size; i++)
+                    {
+                        magY[i] = mag[i, 1];
+                        magZ[i] = mag[i, 2];
+                    }
+
+                    double[,] tan = DataAnalysis.FunzioneOrientamento(magY, magZ);
+                    double[,] smtan = DataAnalysis.RemoveDiscontinuities(tan);
+                    for (int i = 0; i < size; i++)
+                    {
+                        plist.Add(new PointPair(t, smtan[i,0]));
+                        t += 1.0 / frequence;
+                    }
+                    myPane.Title.Text = "Arc Tan(MagY/MagZ)";
+                    if (!smooth) { myPane.AddCurve("Arc Tan(MagY/MagZ)", plist, Color.Blue, SymbolType.None); }
+                    else { myPane.AddCurve("Arc Tan(MagY/MagZ) Smoothed", plist, Color.Blue, SymbolType.None); }
+                    zedGraphControl1.AxisChange();
+                    zedGraphControl1.Refresh();
+                    break;
+                case 6:
+                    // acc x
+                    plist.Clear();
+                    t = 0;
+                    acc = ExtractData(0, selectedSensor);
+                    size = acc.GetLength(0);
+                    double[] accX = new double[size];
+
+                    for (int i = 0; i < size; i++)
+                    {
+                        accX[i] = acc[i, 0];
+                    }
+
+                    double[] accX_opt = checkBox3.Checked ? DataAnalysis.ComputeSquare(accX, frequence, 7, 0.4) : accX;
+                    for (int i = 0; i < size; i++)
+                    {
+                        plist.Add(new PointPair(t, accX_opt[i]));
+                        t += 1.0 / frequence;
+                    }
+                    myPane.YAxis.Title.Text = "N/kg";
+                    myPane.Title.Text = "Acc X";
+                    if (!smooth) { myPane.AddCurve("Acc X", plist, Color.Blue, SymbolType.None); }
+                    else { myPane.AddCurve("Acc X", plist, Color.Blue, SymbolType.None); }
+                    zedGraphControl1.AxisChange();
+                    zedGraphControl1.Refresh();
+                    // modulo acc x
+                    // point pair list
+                    break;
             } 
+        }
+
+        private double[,] ExtractData(int range, int sensType, int sensPos)
+        {
+            // sampwin - smooto -for
+            int size = samplewin.Count;
+            double[,] data = new double[size, 3];
+            List<Packet> smoothed = DataAnalysis.SmoothData(samplewin, range);
+            for (int i = 0; i < size; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    switch (sensType)
+                    {
+                        case 0:
+                            data[i, j] = smoothed[i].Sensors[sensPos].acc[j]; // dipende dal tipo sens
+                            break;
+                        case 1:
+                            data[i, j] = smoothed[i].Sensors[sensPos].gyr[j]; // dipende dal tipo sens
+                            break;
+                        case 2:
+                            data[i, j] = smoothed[i].Sensors[sensPos].mag[j]; // dipende dal tipo sens
+                            break;
+
+                        case 3:
+                            data[i, j] = smoothed[i].Sensors[sensPos].q[j]; // dipende dal tipo sens
+                            break;
+                    }
+
+                }
+            }
+            return data;
         }
 
         private double[,] ExtractData( int sensType, int sensPos )  
@@ -552,15 +727,18 @@ namespace Grapher
         private void type_of_grph_cb_SelectedIndexChanged(object sender, EventArgs e)
         {
             selectedGraph = type_of_grph_cb.SelectedIndex;
-            if (selectedGraph != 2) {
+            if (selectedGraph != 2 && selectedGraph != 6) {
                 checkBox3.Enabled = false;
                 checkBox3.Checked = false;
                 sensor_type.Items.Clear(); // si potrebbe controllare il numero di item nella lista, se sono 3 agg Qua.
-                if (selectedGraph == 3) { 
+                if (selectedGraph == 3)
+                {
                     sensor_type.Items.AddRange(new object[] {
                         "Qua"});
                     sensor_type.SelectedIndex = sensor_type.FindStringExact("Qua");
-                } else {
+                    sensor_position.Enabled = false;
+                }   
+                else { 
                     sensor_type.Items.AddRange(new object[] {
                     "Acc",
                     "Gyr",
@@ -575,6 +753,34 @@ namespace Grapher
                     "Gyr",
                     "Mag"});
                 sensor_type.SelectedIndex = sensor_type.FindStringExact("Acc");
+            }
+
+            if (selectedGraph == 5 || selectedGraph == 6)
+            {
+                sensor_type.Enabled = false;
+                sensor_position.Enabled = true;
+                smoothing_cb.Enabled = true;
+                checkBox1.Enabled = true;
+                checkBox2.Enabled = true;
+                numericUpDown_smoothing.Enabled = true;
+            } else 
+            if (selectedGraph != 4)
+            {
+                // sblocco tutto
+                sensor_type.Enabled = true;
+                sensor_position.Enabled = true;
+                smoothing_cb.Enabled = true;
+                checkBox1.Enabled = true;
+                checkBox2.Enabled = true;
+                numericUpDown_smoothing.Enabled = true;
+            } else
+            {
+                sensor_type.Enabled = false;
+                sensor_position.Enabled = false;
+                smoothing_cb.Enabled = false;
+                checkBox1.Enabled = false;
+                checkBox2.Enabled = false;
+                numericUpDown_smoothing.Enabled = false;
             }
             if (samplewin != null) {
                 DisplayData(samplewin);
