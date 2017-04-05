@@ -448,12 +448,23 @@ namespace Grapher
                     double epsilon = 0.4;
                     double cutOff = 0.53;
                     // sotto i 10 non squadra nulla di corretto perche' e' troppo instabile, sopra il 25 tentenna. tra 10 e 25 ok
-                    if (smoothRange >= 10 && smoothRange < 20) {
-                        cutOff = 0.53;
-                    } else if (smoothRange >= 20 && smoothRange < 30) {
-                        cutOff = 0.33;
-                    } else {
-                        cutOff = 0.21;
+                    if (smoothing_cb.Checked)
+                    {
+                        if (smoothRange >= 10 && smoothRange < 20)
+                        {
+                            cutOff = 0.53;
+                        }
+                        else if (smoothRange >= 20 && smoothRange < 30)
+                        {
+                            cutOff = 0.33;
+                        }
+                        else
+                        {
+                            cutOff = 0.21;
+                        }
+                    } else
+                    {
+                        cutOff = 1.5;
                     }
                     double[] dst = checkBox3.Checked ? DataAnalysis.ComputeSquare(dst0, frequence, cutOff, epsilon) : dst0;
                     for (int i = 0; i < dst.Length; i++) {
@@ -524,6 +535,15 @@ namespace Grapher
         private void numericUpDown_smoothing_ValueChanged(object sender, EventArgs e)
         {
             smoothRange = (int)numericUpDown_smoothing.Value;
+            if (smoothRange >= 10) { checkBox3.Enabled = true; }
+            else { checkBox3.Enabled = false; }
+            /*if (smoothRange >= 10 && smoothing_cb.Checked)
+            {
+                checkBox3.Enabled = true;
+            } else
+            {
+                checkBox3.Enabled = false; // oppure se non e' checked lo smoothing, cambio il cutoff
+            }*/
             if (samplewin!= null) {
                 DisplayData(samplewin);
             }
