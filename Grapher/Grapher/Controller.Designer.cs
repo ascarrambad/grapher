@@ -59,12 +59,14 @@
             this.label_sensor_position = new System.Windows.Forms.Label();
             this.label_sensor_type = new System.Windows.Forms.Label();
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
+            this.cutOff_value = new System.Windows.Forms.NumericUpDown();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWindow)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown_smoothing)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.cutOff_value)).BeginInit();
             this.SuspendLayout();
             // 
             // splitContainer1
@@ -99,6 +101,7 @@
             // 
             // splitContainer1.Panel2
             // 
+            this.splitContainer1.Panel2.Controls.Add(this.cutOff_value);
             this.splitContainer1.Panel2.Controls.Add(this.checkBox3);
             this.splitContainer1.Panel2.Controls.Add(this.checkBox2);
             this.splitContainer1.Panel2.Controls.Add(this.checkBox1);
@@ -111,8 +114,8 @@
             this.splitContainer1.Panel2.Controls.Add(this.sensor_type);
             this.splitContainer1.Panel2.Controls.Add(this.label_sensor_position);
             this.splitContainer1.Panel2.Controls.Add(this.label_sensor_type);
-            this.splitContainer1.Size = new System.Drawing.Size(1143, 611);
-            this.splitContainer1.SplitterDistance = 271;
+            this.splitContainer1.Size = new System.Drawing.Size(1140, 611);
+            this.splitContainer1.SplitterDistance = 270;
             this.splitContainer1.TabIndex = 0;
             // 
             // btn_console_clear
@@ -318,7 +321,7 @@
             // checkBox3
             // 
             this.checkBox3.AutoSize = true;
-            this.checkBox3.Location = new System.Drawing.Point(785, 18);
+            this.checkBox3.Location = new System.Drawing.Point(778, 10);
             this.checkBox3.Name = "checkBox3";
             this.checkBox3.Size = new System.Drawing.Size(66, 17);
             this.checkBox3.TabIndex = 16;
@@ -469,11 +472,40 @@
             this.label_sensor_type.TabIndex = 22;
             this.label_sensor_type.Text = "Sensor Type";
             // 
+            // cutOff_value
+            // 
+            this.cutOff_value.DecimalPlaces = 2;
+            this.cutOff_value.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            131072});
+            this.cutOff_value.Location = new System.Drawing.Point(778, 28);
+            this.cutOff_value.Maximum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.cutOff_value.Minimum = new decimal(new int[] {
+            20,
+            0,
+            0,
+            -2147483648});
+            this.cutOff_value.Name = "cutOff_value";
+            this.cutOff_value.Size = new System.Drawing.Size(43, 20);
+            this.cutOff_value.TabIndex = 24;
+            this.cutOff_value.Value = new decimal(new int[] {
+            53,
+            0,
+            0,
+            131072});
+            this.cutOff_value.ValueChanged += new System.EventHandler(this.cutOff_value_ValueChanged);
+            // 
             // Controller
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1143, 611);
+            this.ClientSize = new System.Drawing.Size(1140, 611);
             this.Controls.Add(this.splitContainer1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
@@ -487,6 +519,7 @@
             this.splitContainer1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownWindow)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown_smoothing)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.cutOff_value)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -528,6 +561,7 @@
         private System.Windows.Forms.CheckBox checkBox1;
         private System.Windows.Forms.CheckBox checkBox2;
         private System.Windows.Forms.CheckBox checkBox3;
+        private System.Windows.Forms.NumericUpDown cutOff_value;
     }
 }
 

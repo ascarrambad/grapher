@@ -31,6 +31,7 @@ namespace Grapher {
         string csvPath;
         int smoothRange = 10;
         Boolean smooth;
+        double cutOff;
 
 
         public Controller() {
@@ -64,7 +65,7 @@ namespace Grapher {
             parser.clientConnectedDelegate = DataProviderClientConnectedWriter;
             parser.clientDisconnectedDelegate = DataProviderClientDisconnectedWriter;
 
-            sensor_position.SelectedIndex = sensor_position.FindStringExact("1 (bacino)");
+            sensor_position.SelectedIndex = sensor_position.FindStringExact("1 (Bacino)");
             selectedSensor = sensor_position.SelectedIndex;
             // selected sensor type
             sensor_type.SelectedIndex = sensor_type.FindStringExact("Acc");
@@ -72,6 +73,14 @@ namespace Grapher {
             // selected graph
             type_of_grph_cb.SelectedIndex = type_of_grph_cb.FindStringExact("Modulo");
             selectedGraph = type_of_grph_cb.SelectedIndex;
+            cutOff = (double)cutOff_value.Value;
+
+            zedGraphControl1.GraphPane.CurveList.Clear();
+            zedGraphControl1.Invalidate();
+            zedGraphControl1.GraphPane.Title.Text = "Graph";
+            zedGraphControl1.GraphPane.XAxis.Title.Text = "x";
+            zedGraphControl1.GraphPane.YAxis.Title.Text = "y";
+            zedGraphControl1.AxisChange();
         }
 
         // evento di click sul tasto start server
@@ -322,6 +331,7 @@ namespace Grapher {
             // controllo se e' attivo lo smoothing!!
             if (smoothRange < 10) {
                 checkBox3.Enabled = false;
+                cutOff_value.Enabled = false;
             }
             samplewin = sampwin;
             smoothed = DataAnalysis.SmoothData(samplewin, smoothRange);
@@ -415,9 +425,8 @@ namespace Grapher {
                     t = 0;
                     double[] dst0 = DataAnalysis.ComputeStandardDeviations(modules, smoothRange);
                     double epsilon = 0.4;
-                    double cutOff = 0.53;
                     // sotto i 10 non squadra nulla di corretto perche' e' troppo instabile, sopra il 25 tentenna. tra 10 e 25 ok
-                    if (smoothing_cb.Checked) {
+                    /*if (smoothing_cb.Checked) {
                         if (smoothRange >= 10 && smoothRange < 20) {
                             cutOff = 0.53;
                         }
@@ -430,7 +439,7 @@ namespace Grapher {
                     }
                     else {
                         cutOff = 1.5;
-                    }
+                    }*/
                     double[] dst = checkBox3.Checked ? DataAnalysis.ComputeSquare(dst0, frequence, cutOff, epsilon) : dst0;
                     for (int i = 0; i < dst.Length; i++) {
                         plist.Add(new PointPair(t, dst[i]));
@@ -476,11 +485,21 @@ namespace Grapher {
 
 
                     PointPairList dead = DataAnalysis.ComputeDeadReckoning(q0, acc, mag, frequence, window);
+                    PointPairList start = new PointPairList();
+                    start.Add(dead.First());
+                    PointPairList end = new PointPairList();
+                    end.Add(dead.Last());
+                    dead.RemoveAt(0);
+                    dead.RemoveAt(dead.Count - 1);
 
                     GraphPane pane = zedGraphControl1.GraphPane;
                     pane.CurveList.Clear();
-
-                    pane.AddCurve("Prova", dead, Color.Red, SymbolType.None);
+                    myPane.Title.Text = "Dead Reckoning";
+                    myPane.YAxis.Title.Text = "m";
+                    myPane.XAxis.Title.Text = "m";
+                    pane.AddCurve("Start point", start, Color.Green, SymbolType.Square);
+                    pane.AddCurve("Path", dead, Color.Black, SymbolType.None);
+                    pane.AddCurve("End point", end, Color.Red, SymbolType.Circle);
                     zedGraphControl1.AxisChange();
                     zedGraphControl1.Refresh();
                     break;
@@ -615,8 +634,8 @@ namespace Grapher {
 
         private void numericUpDown_smoothing_ValueChanged(object sender, EventArgs e) {
             smoothRange = (int)numericUpDown_smoothing.Value;
-            if (smoothRange >= 10) { checkBox3.Enabled = true; }
-            else { checkBox3.Enabled = false; }
+            if (smoothRange >= 10 && (selectedGraph == 2 || selectedGraph == 6)) { checkBox3.Enabled = true; cutOff_value.Enabled = true; }
+            else { checkBox3.Enabled = false; cutOff_value.Enabled = false; }
             /*if (smoothRange >= 10 && smoothing_cb.Checked)
             {
                 checkBox3.Enabled = true;
@@ -634,6 +653,7 @@ namespace Grapher {
             if (selectedGraph != 2 && selectedGraph != 6) {
                 checkBox3.Enabled = false;
                 checkBox3.Checked = false;
+                cutOff_value.Enabled = false;
                 sensor_type.Items.Clear(); // si potrebbe controllare il numero di item nella lista, se sono 3 agg Qua.
                 if (selectedGraph == 3) {
                     sensor_type.Items.AddRange(new object[] {
@@ -652,6 +672,7 @@ namespace Grapher {
             }
             else {
                 checkBox3.Enabled = true;
+                cutOff_value.Enabled = true;
                 sensor_type.Items.Clear();
                 sensor_type.Items.AddRange(new object[] {
                     "Acc",
@@ -677,6 +698,7 @@ namespace Grapher {
                 checkBox1.Enabled = true;
                 checkBox2.Enabled = true;
                 numericUpDown_smoothing.Enabled = true;
+                cutOff_value.Enabled = true;
             }
             else {
                 sensor_type.Enabled = false;
@@ -685,6 +707,7 @@ namespace Grapher {
                 checkBox1.Enabled = false;
                 checkBox2.Enabled = false;
                 numericUpDown_smoothing.Enabled = false;
+                //cutOff_value.Enabled = false;
             }
             if (samplewin != null) {
                 DisplayData(samplewin);
@@ -717,6 +740,14 @@ namespace Grapher {
         private void checkBox3_CheckedChanged(object sender, EventArgs e) {
             checkBox1.Checked = false;
             checkBox2.Checked = false;
+            if (samplewin != null) {
+                DisplayData(samplewin);
+            }
+        }
+
+        private void cutOff_value_ValueChanged(object sender, EventArgs e) {
+            cutOff = (double)cutOff_value.Value;
+            
             if (samplewin != null) {
                 DisplayData(samplewin);
             }
