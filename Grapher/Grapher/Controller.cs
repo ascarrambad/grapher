@@ -698,7 +698,6 @@ namespace Grapher {
                 checkBox1.Enabled = true;
                 checkBox2.Enabled = true;
                 numericUpDown_smoothing.Enabled = true;
-                cutOff_value.Enabled = true;
             }
             else {
                 sensor_type.Enabled = false;
