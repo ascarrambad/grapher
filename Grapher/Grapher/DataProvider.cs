@@ -10,14 +10,14 @@ using System.Windows.Forms;
 
 namespace Grapher {
 
-    public struct Sensor {
+    struct Sensor {
         public double[] acc;
         public double[] gyr;
         public double[] mag;
         public double[] q;
     }
 
-    public struct Packet {
+    struct Packet {
         public byte BID;
         public byte MID;
         public byte len;
@@ -31,7 +31,11 @@ namespace Grapher {
         public Sensor[] Sensors;
     }
 
-    public delegate void DataProviderSampleWindow(List<Packet> samplewin);
+    delegate void DataProviderServerStarted(DataProvider dataProvider);
+    delegate void DataProviderClientConnected(DataProvider dataProvider, TcpClient client);
+    delegate void DataProviderSampleWindow(DataProvider dataProvider, List<Packet> samplewin);
+    delegate void DataProviderClientDisconnected(DataProvider dataProvider, TcpClient client);
+    delegate void DataProviderServerStopped(DataProvider dataProvider);
 
     class DataProvider {
 
@@ -40,18 +44,24 @@ namespace Grapher {
         private TcpListener server;
         private TcpClient client;
 
-        private Boolean isActive;
+        private Boolean isClientConnected;
+        private Boolean isServerActive;
 
         private int frequence;
         private int window;
 
         public int Port { get => port; }
         public IPAddress LocalAddr { get => localAddr; }
-        public bool IsActive { get => isActive; }
+        public bool IsClientConnected { get => isClientConnected; }
+        public bool IsServerActive { get => isServerActive; }
         public int Window { get => window; }
         public int Frequence { get => frequence; }
 
+        public DataProviderServerStarted serverStartedDelegate;
+        public DataProviderClientConnected clientConnectedDelegate;
         public DataProviderSampleWindow samplewinDelegate;
+        public DataProviderClientDisconnected clientDisconnectedDelegate;
+        public DataProviderServerStopped serverStoppedDelegate;
 
         public DataProvider() : this(45555, "127.0.0.1") { }
 
@@ -61,8 +71,10 @@ namespace Grapher {
             try {
                 ChangeFrequenceAndWindow(frequence, window);
                 SetAddressAndPort(port, localAddr);
-                this.server.Start();
-            } catch {
+                this.isClientConnected = false;
+                this.isServerActive = false;
+            }
+            catch {
                 throw;
             }
         }
@@ -73,7 +85,7 @@ namespace Grapher {
         }
 
         public void ChangeAddressAndPort(Int32 port, String localAddr) {
-            Stop();
+            if (isServerActive) { Stop(); }
             SetAddressAndPort(port, localAddr);
         }
 
@@ -81,25 +93,50 @@ namespace Grapher {
             try {
                 this.port = port;
                 this.localAddr = IPAddress.Parse(localAddr);
-                this.server = new TcpListener(this.localAddr, port);
-                this.isActive = true;
             }
             catch (Exception ex) {
                 MessageBox.Show("IP Addressing Error!\n" + ex.Message);
-                this.isActive = false;
+                this.isClientConnected = false;
+                this.isServerActive = false;
                 throw;
             }
         }
 
+        public void Start() {
+            if (!isServerActive) {
+                this.server = new TcpListener(this.localAddr, port);
+                this.server.Start();
+                this.isServerActive = true;
+            }
+        }
+
         public void AcceptConnection() {
-            client = server.AcceptTcpClient();
-            ReceiveData();
+            while (isServerActive) {
+                try {
+                    serverStartedDelegate?.Invoke(this);
+                    client = server.AcceptTcpClient();
+                    this.isClientConnected = true;
+                    clientConnectedDelegate?.Invoke(this, client);
+                    ReceiveData();
+                }
+                catch { }
+                finally {
+                    if (isClientConnected) {
+                        client.Close();
+                        this.isClientConnected = false;
+                        clientDisconnectedDelegate?.Invoke(this, client);
+                        client = null;
+                    }
+                }
+            }
         }
 
         public void Stop() {
-            this.client.Close();
+            if (this.isClientConnected) { this.client.Close(); }
             this.server.Stop();
-            this.isActive = false;
+            this.isServerActive = false;
+            this.isClientConnected = false;
+            serverStoppedDelegate?.Invoke(this);
         }
 
         private void ReceiveData() {
@@ -116,7 +153,7 @@ namespace Grapher {
             bool isExtLen;
             int dataLength;
             int sensorsNumber;
-            
+
             bid = 0xFF;
             mid = 0x32;
 
@@ -136,7 +173,8 @@ namespace Grapher {
             // modalità normale
             if (!isExtLen) {
                 dataLength = pream[2];
-            } else {
+            }
+            else {
                 // modalità extended-length
                 byte[] tmp = new byte[2];
                 tmp = bin.ReadBytes(2);
@@ -149,18 +187,19 @@ namespace Grapher {
 
             byte[] rawData = bin.ReadBytes(dataLength + 1); // lettura dei dati
 
-            while (this.isActive && rawData.Count() != 0) {
+            while (this.isClientConnected && rawData.Count() != 0) {
 
-                Packet packet = new Packet();
-                packet.BID = bid;
-                packet.MID = mid;
-                packet.len = len;
-                packet.ext_len_mul = ext_len_mul;
-                packet.ext_len_add = ext_len_add;
-                packet.IsExtLen = isExtLen;
-                packet.DataLength = dataLength;
-                packet.SensorsNumber = sensorsNumber;
-                packet.Sensors = new Sensor[sensorsNumber];
+                Packet packet = new Packet() {
+                    BID = bid,
+                    MID = mid,
+                    len = len,
+                    ext_len_mul = ext_len_mul,
+                    ext_len_add = ext_len_add,
+                    IsExtLen = isExtLen,
+                    DataLength = dataLength,
+                    SensorsNumber = sensorsNumber,
+                    Sensors = new Sensor[sensorsNumber]
+                };
 
                 for (int i = 0; i < sensorsNumber; i++) {
                     packet.Sensors[i].acc = new double[3];
@@ -174,18 +213,19 @@ namespace Grapher {
 
                 int campNum = window * frequence;
                 if (samplewin.Count % (campNum / 2) == 0 && samplewin.Count >= campNum) {
-                    samplewinDelegate(samplewin);
+                    samplewinDelegate?.Invoke(this, samplewin);
                 }
 
                 if (!isExtLen) {
                     bin.ReadBytes(3);
-                } else {
+                }
+                else {
                     bin.ReadBytes(5);
                 }
 
                 rawData = bin.ReadBytes(dataLength + 1);
             }
-            samplewinDelegate(samplewin);
+            samplewinDelegate?.Invoke(this, samplewin);
         }
 
         private Packet ParsePacket(Packet packet, byte[] rawData) {
@@ -199,7 +239,8 @@ namespace Grapher {
                         tmp[1] = rawData[k + 2];
                         tmp[2] = rawData[k + 1];
                         tmp[3] = rawData[k];
-                    } else {
+                    }
+                    else {
                         tmp[0] = rawData[k + 5];
                         tmp[1] = rawData[k + 4];
                         tmp[2] = rawData[k + 3];
@@ -210,11 +251,14 @@ namespace Grapher {
 
                     if (j < 3) {
                         packet.Sensors[i].acc[j] = value;
-                    } else if (j < 6) {
+                    }
+                    else if (j < 6) {
                         packet.Sensors[i].gyr[j - 3] = value;
-                    } else if (j < 9) {
+                    }
+                    else if (j < 9) {
                         packet.Sensors[i].mag[j - 6] = value;
-                    } else {
+                    }
+                    else {
                         packet.Sensors[i].q[j - 9] = value;
                     }
                 }
