@@ -8,19 +8,16 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace Grapher
-{
+namespace Grapher {
 
-    struct Sensor
-    {
+    struct Sensor {
         public double[] acc;
         public double[] gyr;
         public double[] mag;
         public double[] q;
     }
 
-    struct Packet
-    {
+    struct Packet {
         public byte BID;
         public byte MID;
         public byte len;
@@ -40,8 +37,7 @@ namespace Grapher
     delegate void DataProviderClientDisconnected(DataProvider dataProvider, TcpClient client);
     delegate void DataProviderServerStopped(DataProvider dataProvider);
 
-    class DataProvider
-    {
+    class DataProvider {
 
         private Int32 port;
         private IPAddress localAddr;
@@ -71,42 +67,34 @@ namespace Grapher
 
         public DataProvider(Int32 port, String localAddr) : this(port, localAddr, 50, 10) { }
 
-        public DataProvider(Int32 port, String localAddr, int frequence, int window)
-        {
-            try
-            {
+        public DataProvider(Int32 port, String localAddr, int frequence, int window) {
+            try {
                 ChangeFrequenceAndWindow(frequence, window);
                 SetAddressAndPort(port, localAddr);
                 this.isClientConnected = false;
                 this.isServerActive = false;
             }
-            catch
-            {
+            catch {
                 throw;
             }
         }
 
-        public void ChangeFrequenceAndWindow(int frequence, int window)
-        {
+        public void ChangeFrequenceAndWindow(int frequence, int window) {
             this.frequence = frequence;
             this.window = window;
         }
 
-        public void ChangeAddressAndPort(Int32 port, String localAddr)
-        {
+        public void ChangeAddressAndPort(Int32 port, String localAddr) {
             if (isServerActive) { Stop(); }
             SetAddressAndPort(port, localAddr);
         }
 
-        private void SetAddressAndPort(Int32 port, String localAddr)
-        {
-            try
-            {
+        private void SetAddressAndPort(Int32 port, String localAddr) {
+            try {
                 this.port = port;
                 this.localAddr = IPAddress.Parse(localAddr);
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                 MessageBox.Show("IP Addressing Error!\n" + ex.Message);
                 this.isClientConnected = false;
                 this.isServerActive = false;
@@ -114,8 +102,7 @@ namespace Grapher
             }
         }
 
-        public void Start()
-        {
+        public void Start() {
             if (!isServerActive) {
                 this.server = new TcpListener(this.localAddr, port);
                 this.server.Start();
@@ -123,8 +110,7 @@ namespace Grapher
             }
         }
 
-        public void AcceptConnection()
-        {
+        public void AcceptConnection() {
             while (isServerActive) {
                 try {
                     serverStartedDelegate?.Invoke(this);
@@ -145,8 +131,7 @@ namespace Grapher
             }
         }
 
-        public void Stop()
-        {
+        public void Stop() {
             if (this.isClientConnected) { this.client.Close(); }
             this.server.Stop();
             this.isServerActive = false;
@@ -154,8 +139,7 @@ namespace Grapher
             serverStoppedDelegate?.Invoke(this);
         }
 
-        private void ReceiveData()
-        {
+        private void ReceiveData() {
             NetworkStream stream = client.GetStream();
             BinaryReader bin = new BinaryReader(stream);
 
@@ -176,8 +160,7 @@ namespace Grapher
             byte[] pream = new byte[3];
 
             // cerca la sequenza FF-32
-            while (!(pream[0] == 0xFF && pream[1] == 0x32))
-            {
+            while (!(pream[0] == 0xFF && pream[1] == 0x32)) {
                 pream[0] = pream[1];
                 pream[1] = pream[2];
                 byte[] read = bin.ReadBytes(1);
@@ -188,12 +171,10 @@ namespace Grapher
             isExtLen = pream[2] == 0xFF;
 
             // modalità normale
-            if (!isExtLen)
-            {
+            if (!isExtLen) {
                 dataLength = pream[2];
             }
-            else
-            {
+            else {
                 // modalità extended-length
                 byte[] tmp = new byte[2];
                 tmp = bin.ReadBytes(2);
@@ -206,11 +187,9 @@ namespace Grapher
 
             byte[] rawData = bin.ReadBytes(dataLength + 1); // lettura dei dati
 
-            while (this.isClientConnected && rawData.Count() != 0)
-            {
+            while (this.isClientConnected && rawData.Count() != 0) {
 
-                Packet packet = new Packet()
-                {
+                Packet packet = new Packet() {
                     BID = bid,
                     MID = mid,
                     len = len,
@@ -222,8 +201,7 @@ namespace Grapher
                     Sensors = new Sensor[sensorsNumber]
                 };
 
-                for (int i = 0; i < sensorsNumber; i++)
-                {
+                for (int i = 0; i < sensorsNumber; i++) {
                     packet.Sensors[i].acc = new double[3];
                     packet.Sensors[i].gyr = new double[3];
                     packet.Sensors[i].mag = new double[3];
@@ -234,17 +212,14 @@ namespace Grapher
                 samplewin.Add(packet);
 
                 int campNum = window * frequence;
-                if (samplewin.Count % (campNum / 2) == 0 && samplewin.Count >= campNum)
-                {
+                if (samplewin.Count % (campNum / 2) == 0 && samplewin.Count >= campNum) {
                     samplewinDelegate?.Invoke(this, samplewin);
                 }
 
-                if (!isExtLen)
-                {
+                if (!isExtLen) {
                     bin.ReadBytes(3);
                 }
-                else
-                {
+                else {
                     bin.ReadBytes(5);
                 }
 
@@ -253,24 +228,19 @@ namespace Grapher
             samplewinDelegate?.Invoke(this, samplewin);
         }
 
-        private Packet ParsePacket(Packet packet, byte[] rawData)
-        {
-            for (int i = 0; i < packet.SensorsNumber; i++)
-            {
-                for (int j = 0; j < 13; j++)
-                {
+        private Packet ParsePacket(Packet packet, byte[] rawData) {
+            for (int i = 0; i < packet.SensorsNumber; i++) {
+                for (int j = 0; j < 13; j++) {
                     byte[] tmp = new byte[4];
                     int k = i * 52 + j * 4;
 
-                    if (packet.SensorsNumber < 5)
-                    {
+                    if (packet.SensorsNumber < 5) {
                         tmp[0] = rawData[k + 3]; // lettura inversa
                         tmp[1] = rawData[k + 2];
                         tmp[2] = rawData[k + 1];
                         tmp[3] = rawData[k];
                     }
-                    else
-                    {
+                    else {
                         tmp[0] = rawData[k + 5];
                         tmp[1] = rawData[k + 4];
                         tmp[2] = rawData[k + 3];
@@ -279,20 +249,16 @@ namespace Grapher
 
                     double value = BitConverter.ToSingle(tmp, 0);
 
-                    if (j < 3)
-                    {
+                    if (j < 3) {
                         packet.Sensors[i].acc[j] = value;
                     }
-                    else if (j < 6)
-                    {
+                    else if (j < 6) {
                         packet.Sensors[i].gyr[j - 3] = value;
                     }
-                    else if (j < 9)
-                    {
+                    else if (j < 9) {
                         packet.Sensors[i].mag[j - 6] = value;
                     }
-                    else
-                    {
+                    else {
                         packet.Sensors[i].q[j - 9] = value;
                     }
                 }

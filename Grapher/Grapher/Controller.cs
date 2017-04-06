@@ -12,79 +12,28 @@ using System.IO; // csv
 using ZedGraph;
 using System.Net.Sockets;
 
-namespace Grapher
-{
-    public partial class Controller : Form
-    {
+namespace Grapher {
+    public partial class Controller : Form {
 
         private DataProvider parser;
         private List<Packet> samplewin;
         private List<Packet> selected;
         private List<Packet> smoothed;
         private List<Packet> filtered;
-        /// Thread nel quale gira il parser, o meglio la funzione che gestisce il Server.
+        
         Thread threadParser;
-        /// Frequenza di campionamento.
         int frequence = 50;
-        /// Dimensione della finestra in secondi.
         int window = 10;
-        /// Pannello zedgraph sul quale disegnare i grafici.
         GraphPane myPane;
-        /// Indice grafico selezionato.
         int selectedGraph;
-        /// Indice posizione sensore selezionato.
         int selectedSensor;
-        /// Indice tipo di sensore selezionato.
         int selectedSensorType;
-        /// Path in cui salvare il file csv/actions_log.
         string csvPath;
-        /// Sampwin salvata in locale dopo che il server viene stoppato per poter disegnare ancora i grafici relativi a quel campione.
-        //List<double[,]> mySampwin;
-        /// Range per lo smoothing: anche raggio dell'intorno in cui guardare per fare la media per la deviazione standard.
         int smoothRange = 10;
         Boolean smooth;
-        /*/// Var riconoscimento azione - moto : inizio del moto.
-        double motoStart = 0;
-        /// Var riconoscimento azione - moto : inizio dello stato di fermo.
-        double fermoStart = 0;
-        /// Var riconoscimento azioni : tempo fine finestra precedente.
-        double winTime = 0;
-        /// Var riconoscimento azione - moto : nome azione in corso.
-        string action = null;
-        /// Var riconoscimento azione - posizione : nome posizione attuale.
-        string state = null;
-        /// Var riconoscimento azione - posizione : inizio stato in corso.
-        double stateStart = 0;
-        /// Var riconoscimento azione - girata : tipo di girata.
-        string turnAction = null;
-        /// Var riconoscimento azione - girata : inizio girata attuale.
-        double turnStart = 0;
-        /// Var riconoscimento azione - girata : tipo di girata che potrebbe essere quella attuale.
-        string turnPossibleAction = null;
-        /// Var riconoscimento azione - girata : possibile inizio per la girata possibile attuale.
-        double turnPossibleStart = 0;
-        /// Var riconoscimento azione - girata : grado minimo per essere considerato significativo.
-        double degree = 10;
-        /// Var riconoscimento azione - girata : ultimo angolo di riferimento.
-        double refAngolo = 0;
 
-        String segAction = null;                    //!< Azione attuale rilevata nella segmentazione.
-        private String segPossibleAction = null;    //!< Azione possibile che potrebbe essere in atto nell'operazione di segmentazione.
-        int segStart = 0;                           //!< Inizio dell'azione corrente nell'operazione di segmentazione.
-        int segPossibleStart = 0;                   //!< Inizio dell'azione plausibile nell'operazione di segmentazione.
 
-        /// Var riconoscimento azioni : stringa da stampare su file.
-        string outToFileStr = "";
-        /// Numero di client che si vuole connettere al server.
-        int clientsAmount = 0;
-        /// Array di curve di supporto contenente il path di dead reckoning di ogni client (massimo 10).
-       // Curve[] multiClientCurves = new Curve[10];
-        /// Data iniziale di default.
-        DateTime startTime = new DateTime( 1900, 1, 1, 0, 0, 0, 0 );
-        bool printCSV;*/
-
-        public Controller()
-        {
+        public Controller() {
             InitializeComponent();
             myPane = zedGraphControl1.GraphPane;
             // finestra - cazzo fa??
@@ -94,12 +43,10 @@ namespace Grapher
             frequence = Int32.Parse(frequence_box.Text);
             // csv location ... da completare
             csvPath = Directory.GetCurrentDirectory() + @"\_own_output";
-            try
-            {
+            try {
                 System.IO.Directory.CreateDirectory(csvPath);
             }
-            catch (Exception e)
-            {
+            catch (Exception e) {
                 printToServerConsole("Impossibile creare la cartella " + csvPath + "\n");
             }
             csv_path.Text = csvPath;
@@ -107,12 +54,9 @@ namespace Grapher
             // numeric smooting max value
             numericUpDown_smoothing.Maximum = Math.Floor((decimal)(window * frequence / 2));
             smoothRange = (int)numericUpDown_smoothing.Value;
-            // client???? ...
 
             selectedGraph = type_of_grph_cb.SelectedIndex;
-            // default value of segmentation
-            //segmentation_cb.Enabled = ( (selectedGraph == 0 && selectedSensorType == 0) ? true : false );
-            // dovrebbe avere anche client, csvPath, pritnCSV, printServerConsole, setButtonServerStart, Sampwin
+
             parser = new DataProvider();
             parser.samplewinDelegate = DataProviderSampleWindowReceived;
             parser.serverStartedDelegate = DataProviderServerDidStart;
@@ -131,8 +75,7 @@ namespace Grapher
         }
 
         // evento di click sul tasto start server
-        private void btn_server_start_Click(object sender, EventArgs e)
-        {
+        private void btn_server_start_Click(object sender, EventArgs e) {
             if (parser.IsServerActive) {
                 parser.Stop(); // bloccante, mi crea problemi
                 // come usare il delegato di sampwin?? viene gia impostata alla chiamata di receive Data?
@@ -148,8 +91,6 @@ namespace Grapher
                 frequence = Int32.Parse(frequence_box.Text);
                 numericUpDown_smoothing.Maximum = Math.Floor((decimal)(window * frequence / 2));
                 try {
-                    // dovrei attiavare il server, ma il nostro costruttore crea il parser e attiva il server, quindi se 
-                    // devo startarlo non ho nessun metodo che lo faccia?? lo creo io 
                     parser.ChangeAddressAndPort(
                         Int32.Parse(port.Text),
                         String.Format("{0}.{1}.{2}.{3}", ip1.Text, ip2.Text, ip3.Text, ip4.Text)
@@ -164,30 +105,13 @@ namespace Grapher
             }
         }
 
-        /// <summary>
-		/// Delegato per scrivere sulla console del Server.
-		/// </summary>
-		/// <param name="s">Stringa da scrivere.</param>
-		public delegate void printToServerConsoleDelegate(string s);
-
-        public void printToServerConsole(string s)
-        {
-            if (this.console.InvokeRequired) {
-                Invoke(new printToServerConsoleDelegate(printToServerConsole), new object[] { s });
-            }
-            else {
-                console.AppendText(s);// eccezione se spento male
-                // auto scroll 
-                //if (.Checked)
-                //{
-                console.SelectionStart = console.Text.Length;
-                console.ScrollToCaret();
-                //}
-            }
+        public void printToServerConsole(string s) {
+            console.AppendText(s);
+            console.SelectionStart = console.Text.Length;
+            console.ScrollToCaret();
         }
 
-        private void buttonSelectFolder_Click(object sender, EventArgs e)
-        {
+        private void buttonSelectFolder_Click(object sender, EventArgs e) {
             DialogResult result = folderBrowserDialog1.ShowDialog();
             if (result == DialogResult.OK) {
                 csvPath = folderBrowserDialog1.SelectedPath; // qua si potrebbe aggiungere una cartella predefinita dove inserire i 2 file, oppure far decidere all'utente di crearla o no
@@ -195,8 +119,7 @@ namespace Grapher
             }
         }
 
-        private void btn_console_clear_Click(object sender, EventArgs e)
-        {
+        private void btn_console_clear_Click(object sender, EventArgs e) {
             console.Text = "";
             if (parser.IsServerActive) {
                 //console.Text = "Server is Active.\n";
@@ -214,18 +137,16 @@ namespace Grapher
         // DataProviderDelegates
 
         void DataProviderClientConnectedWriter(DataProvider dataProvider, TcpClient aClient) {
-            if (this.InvokeRequired)
-            {
+            if (this.InvokeRequired) {
                 Invoke(new DataProviderClientConnected(DataProviderClientConnectedWriter), new object[] { dataProvider, aClient });
-            } else
-            {
+            }
+            else {
                 // azione di scrivere che il client e'connesso, non funziona
                 printToServerConsole("Client connected!\n");
             }
         }
 
-        void DataProviderClientDisconnectedWriter(DataProvider dataProvider, TcpClient aClient)
-        {
+        void DataProviderClientDisconnectedWriter(DataProvider dataProvider, TcpClient aClient) {
             if (this.InvokeRequired) {
                 Invoke(new DataProviderClientDisconnected(DataProviderClientDisconnectedWriter), new object[] { dataProvider, aClient });
             }
@@ -249,8 +170,7 @@ namespace Grapher
                 int size = acc.GetLength(0);
                 double[] accX = new double[size];
 
-                for (int i = 0; i < size; i++)
-                {
+                for (int i = 0; i < size; i++) {
                     accX[i] = acc[i, 0];
                 }
 
@@ -268,8 +188,7 @@ namespace Grapher
                 //System.IO.File.WriteAllText(csvPath + @"\output3.txt", "Girate:");
 
                 String[] test = new String[girate.Count()];
-                for (int i = 0; i < girate.Count(); ++i)
-                {
+                for (int i = 0; i < girate.Count(); ++i) {
                     test[i] = girate[i].ToString();
                 }
                 //System.IO.File.WriteAllLines(csvPath + @"\output3.txt", test);
@@ -277,13 +196,12 @@ namespace Grapher
                 // passo a Luca ...
                 DataWriter.DataWrite(motoStaz, layStandSit, girate, frequence, csvPath);
                 if (samplewin != null) { DataWriter.PrintPacketsToFile(samplewin, csvPath); }
-                
+
 
             }
         }
 
-        void DataProviderSampleWindowReceived(DataProvider dataProvider, List<Packet> sampwin)
-        {
+        void DataProviderSampleWindowReceived(DataProvider dataProvider, List<Packet> sampwin) {
 
             if (this.InvokeRequired) {
                 Invoke(new DataProviderSampleWindow(DataProviderSampleWindowReceived), new object[] { dataProvider, sampwin });
@@ -293,8 +211,7 @@ namespace Grapher
             }
         }
 
-        void DataProviderServerDidStart(DataProvider dataProvider)
-        {
+        void DataProviderServerDidStart(DataProvider dataProvider) {
             if (this.InvokeRequired) {
                 Invoke(new DataProviderServerStarted(DataProviderServerDidStart), new object[] { dataProvider });
             }
@@ -318,8 +235,7 @@ namespace Grapher
 
         }
 
-        void DataProviderServerDidStop(DataProvider dataProvider)
-        {
+        void DataProviderServerDidStop(DataProvider dataProvider) {
             if (this.InvokeRequired) {
                 Invoke(new DataProviderServerStopped(DataProviderServerDidStop), new object[] { dataProvider });
             }
@@ -340,8 +256,7 @@ namespace Grapher
 
         }
 
-        private double[] ExtractAngles(double[,] data, int kind)
-        {
+        private double[] ExtractAngles(double[,] data, int kind) {
             int size = data.GetLength(0);
             double[] e = new double[size];
 
@@ -352,8 +267,7 @@ namespace Grapher
             return e;
         }
 
-        private void EulerGraph()
-        {
+        private void EulerGraph() {
             int size = selected.Count;
             double[,] data = new double[size, 4];
             myPane.YAxis.Title.Text = "rad";
@@ -375,7 +289,8 @@ namespace Grapher
                 DisplayEuler(e0, "Roll", true, Color.Blue);
                 DisplayEuler(e1, "Pitch", false, Color.Green);
                 DisplayEuler(e2, "Yaw", false, Color.Red);
-            } else {
+            }
+            else {
                 DisplayEuler(e0, "Roll Smoothed", true, Color.Blue);
                 DisplayEuler(e1, "Pitch Smoothed", false, Color.Green);
                 DisplayEuler(e2, "Yaw Smoothed", false, Color.Red);
@@ -384,8 +299,7 @@ namespace Grapher
             zedGraphControl1.Refresh();
         }
 
-        private void DisplayEuler(double[] data, String label, Boolean clear, Color color)
-        {
+        private void DisplayEuler(double[] data, String label, Boolean clear, Color color) {
             // prima volta devo pulire?? altra funzione
             //if (clear) { myPane.CurveList.Clear(); }
             PointPairList plist = new PointPairList();
@@ -404,8 +318,7 @@ namespace Grapher
         // all'interno del metodo richiamare la funzione extractData,
         // e passare i volire della funzione richiesta
         // pulire il grafico nel se non si devono visualizzare gli angoli di eulero
-        private void DisplayData(List<Packet> sampwin)
-        {
+        private void DisplayData(List<Packet> sampwin) {
             // controllo se e' attivo lo smoothing!!
             if (smoothRange < 10) {
                 checkBox3.Enabled = false;
@@ -416,10 +329,12 @@ namespace Grapher
             filtered = smoothing_cb.Checked ? smoothed : samplewin;
             if (checkBox1.Checked) {
                 selected = DataAnalysis.ComputeHighPass(filtered);
-            } else {
+            }
+            else {
                 if (checkBox2.Checked) {
                     selected = DataAnalysis.ComputeLowPass(filtered);
-                } else {
+                }
+                else {
                     selected = filtered;
                 }
             }
@@ -502,22 +417,18 @@ namespace Grapher
                     double epsilon = 0.4;
                     double cutOff = 0.53;
                     // sotto i 10 non squadra nulla di corretto perche' e' troppo instabile, sopra il 25 tentenna. tra 10 e 25 ok
-                    if (smoothing_cb.Checked)
-                    {
-                        if (smoothRange >= 10 && smoothRange < 20)
-                        {
+                    if (smoothing_cb.Checked) {
+                        if (smoothRange >= 10 && smoothRange < 20) {
                             cutOff = 0.53;
                         }
-                        else if (smoothRange >= 20 && smoothRange < 30)
-                        {
+                        else if (smoothRange >= 20 && smoothRange < 30) {
                             cutOff = 0.33;
                         }
-                        else
-                        {
+                        else {
                             cutOff = 0.21;
                         }
-                    } else
-                    {
+                    }
+                    else {
                         cutOff = 1.5;
                     }
                     double[] dst = checkBox3.Checked ? DataAnalysis.ComputeSquare(dst0, frequence, cutOff, epsilon) : dst0;
@@ -541,30 +452,24 @@ namespace Grapher
 
                     double[,] q0 = new double[size, 4];
 
-                    for (int p = 0; p < size; p++)
-                    {
-                        for (int i = 0; i < 4; i++)
-                        {
+                    for (int p = 0; p < size; p++) {
+                        for (int i = 0; i < 4; i++) {
                             q0[p, i] = samplewin[p].Sensors[0].q[i];
                         }
                     }
 
                     double[,] acc = new double[size, 3];
 
-                    for (int p = 0; p < size; p++)
-                    {
-                        for (int i = 0; i < 3; i++)
-                        {
+                    for (int p = 0; p < size; p++) {
+                        for (int i = 0; i < 3; i++) {
                             acc[p, i] = samplewin[p].Sensors[0].acc[i];
                         }
                     }
 
                     double[,] mag = new double[size, 3];
 
-                    for (int p = 0; p < size; p++)
-                    {
-                        for (int i = 0; i < 3; i++)
-                        {
+                    for (int p = 0; p < size; p++) {
+                        for (int i = 0; i < 3; i++) {
                             mag[p, i] = samplewin[p].Sensors[0].mag[i];
                         }
                     }
@@ -589,17 +494,15 @@ namespace Grapher
                     double[] magY = new double[size];
                     double[] magZ = new double[size];
 
-                    for (int i = 0; i < size; i++)
-                    {
+                    for (int i = 0; i < size; i++) {
                         magY[i] = mag[i, 1];
                         magZ[i] = mag[i, 2];
                     }
 
                     double[,] tan = DataAnalysis.FunzioneOrientamento(magY, magZ);
                     double[,] smtan = DataAnalysis.RemoveDiscontinuities(tan);
-                    for (int i = 0; i < size; i++)
-                    {
-                        plist.Add(new PointPair(t, smtan[i,0]));
+                    for (int i = 0; i < size; i++) {
+                        plist.Add(new PointPair(t, smtan[i, 0]));
                         t += 1.0 / frequence;
                     }
                     myPane.Title.Text = "Arc Tan(MagY/MagZ)";
@@ -616,41 +519,35 @@ namespace Grapher
                     size = acc.GetLength(0);
                     double[] accX = new double[size];
 
-                    for (int i = 0; i < size; i++)
-                    {
+                    for (int i = 0; i < size; i++) {
                         accX[i] = acc[i, 0];
                     }
 
                     double[] accX_opt = checkBox3.Checked ? DataAnalysis.ComputeSquare(accX, frequence, 7, 0.4) : accX;
-                    for (int i = 0; i < size; i++)
-                    {
+                    for (int i = 0; i < size; i++) {
                         plist.Add(new PointPair(t, accX_opt[i]));
                         t += 1.0 / frequence;
                     }
                     myPane.YAxis.Title.Text = "N/kg";
                     myPane.Title.Text = "Acc X";
                     if (!smooth) { myPane.AddCurve("Acc X", plist, Color.Blue, SymbolType.None); }
-                    else { myPane.AddCurve("Acc X", plist, Color.Blue, SymbolType.None); }
+                    else { myPane.AddCurve("Acc X Smoothed", plist, Color.Blue, SymbolType.None); }
                     zedGraphControl1.AxisChange();
                     zedGraphControl1.Refresh();
                     // modulo acc x
                     // point pair list
                     break;
-            } 
+            }
         }
 
-        private double[,] ExtractData(int range, int sensType, int sensPos)
-        {
+        private double[,] ExtractData(int range, int sensType, int sensPos) {
             // sampwin - smooto -for
             int size = samplewin.Count;
             double[,] data = new double[size, 3];
             List<Packet> smoothed = DataAnalysis.SmoothData(samplewin, range);
-            for (int i = 0; i < size; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    switch (sensType)
-                    {
+            for (int i = 0; i < size; i++) {
+                for (int j = 0; j < 3; j++) {
+                    switch (sensType) {
                         case 0:
                             data[i, j] = smoothed[i].Sensors[sensPos].acc[j]; // dipende dal tipo sens
                             break;
@@ -671,8 +568,7 @@ namespace Grapher
             return data;
         }
 
-        private double[,] ExtractData( int sensType, int sensPos )  
-        {
+        private double[,] ExtractData(int sensType, int sensPos) {
             int size = selected.Count;
             double[,] data = new double[size, 3];
             // devo fare uno switch anche qua dentro per sapere quali richiamare
@@ -693,23 +589,21 @@ namespace Grapher
                             data[i, j] = selected[i].Sensors[sensPos].q[j]; // dipende dal tipo sens
                             break;
                     }
-                    
+
                 }
             }
             return data;
         }
 
-        private void smoothing_cb_CheckedChanged(object sender, EventArgs e)
-        {
+        private void smoothing_cb_CheckedChanged(object sender, EventArgs e) {
             if (samplewin != null) {
                 //selected = smoothing_cb.Checked ? smoothed : samplewin;
                 DisplayData(samplewin);
             }
-            
+
         }
 
-        private void sensor_type_SelectedIndexChanged(object sender, EventArgs e)
-        {
+        private void sensor_type_SelectedIndexChanged(object sender, EventArgs e) {
             selectedSensorType = sensor_type.SelectedIndex;
             if (samplewin != null) {
                 // fare una funzione che 
@@ -719,8 +613,7 @@ namespace Grapher
             //checkBoxSegmentation.Checked = false;
         }
 
-        private void numericUpDown_smoothing_ValueChanged(object sender, EventArgs e)
-        {
+        private void numericUpDown_smoothing_ValueChanged(object sender, EventArgs e) {
             smoothRange = (int)numericUpDown_smoothing.Value;
             if (smoothRange >= 10) { checkBox3.Enabled = true; }
             else { checkBox3.Enabled = false; }
@@ -731,26 +624,24 @@ namespace Grapher
             {
                 checkBox3.Enabled = false; // oppure se non e' checked lo smoothing, cambio il cutoff
             }*/
-            if (samplewin!= null) {
+            if (samplewin != null) {
                 DisplayData(samplewin);
             }
         }
 
-        private void type_of_grph_cb_SelectedIndexChanged(object sender, EventArgs e)
-        {
+        private void type_of_grph_cb_SelectedIndexChanged(object sender, EventArgs e) {
             selectedGraph = type_of_grph_cb.SelectedIndex;
             if (selectedGraph != 2 && selectedGraph != 6) {
                 checkBox3.Enabled = false;
                 checkBox3.Checked = false;
                 sensor_type.Items.Clear(); // si potrebbe controllare il numero di item nella lista, se sono 3 agg Qua.
-                if (selectedGraph == 3)
-                {
+                if (selectedGraph == 3) {
                     sensor_type.Items.AddRange(new object[] {
                         "Qua"});
                     sensor_type.SelectedIndex = sensor_type.FindStringExact("Qua");
                     sensor_position.Enabled = false;
-                }   
-                else { 
+                }
+                else {
                     sensor_type.Items.AddRange(new object[] {
                     "Acc",
                     "Gyr",
@@ -758,26 +649,27 @@ namespace Grapher
                     sensor_type.SelectedIndex = sensor_type.FindStringExact("Acc");
                 }
 
-            } else { checkBox3.Enabled = true;
-                    sensor_type.Items.Clear();
-                    sensor_type.Items.AddRange(new object[] {
+            }
+            else {
+                checkBox3.Enabled = true;
+                sensor_type.Items.Clear();
+                sensor_type.Items.AddRange(new object[] {
                     "Acc",
                     "Gyr",
                     "Mag"});
                 sensor_type.SelectedIndex = sensor_type.FindStringExact("Acc");
             }
 
-            if (selectedGraph == 5 || selectedGraph == 6)
-            {
+            if (selectedGraph == 5 || selectedGraph == 6) {
                 sensor_type.Enabled = false;
                 sensor_position.Enabled = true;
                 smoothing_cb.Enabled = true;
                 checkBox1.Enabled = true;
                 checkBox2.Enabled = true;
                 numericUpDown_smoothing.Enabled = true;
-            } else 
-            if (selectedGraph != 4)
-            {
+            }
+            else
+            if (selectedGraph != 4) {
                 // sblocco tutto
                 sensor_type.Enabled = true;
                 sensor_position.Enabled = true;
@@ -785,8 +677,8 @@ namespace Grapher
                 checkBox1.Enabled = true;
                 checkBox2.Enabled = true;
                 numericUpDown_smoothing.Enabled = true;
-            } else
-            {
+            }
+            else {
                 sensor_type.Enabled = false;
                 sensor_position.Enabled = false;
                 smoothing_cb.Enabled = false;
@@ -799,8 +691,7 @@ namespace Grapher
             }
         }
 
-        private void sensor_position_SelectedIndexChanged(object sender, EventArgs e)
-        {
+        private void sensor_position_SelectedIndexChanged(object sender, EventArgs e) {
             //selectedGraph = type_of_grph_cb.SelectedIndex;
             selectedSensor = sensor_position.SelectedIndex;
             if (samplewin != null) {
@@ -809,24 +700,21 @@ namespace Grapher
         }
 
 
-        private void checkBox1_CheckedChanged(object sender, EventArgs e)
-        {
+        private void checkBox1_CheckedChanged(object sender, EventArgs e) {
             if (checkBox1.Checked == true) { checkBox2.Checked = false; }
             if (samplewin != null) {
                 DisplayData(samplewin);
             }
         }
 
-        private void checkBox2_CheckedChanged(object sender, EventArgs e)
-        {
+        private void checkBox2_CheckedChanged(object sender, EventArgs e) {
             if (checkBox2.Checked == true) { checkBox1.Checked = false; }
             if (samplewin != null) {
                 DisplayData(samplewin);
             }
         }
 
-        private void checkBox3_CheckedChanged(object sender, EventArgs e)
-        {
+        private void checkBox3_CheckedChanged(object sender, EventArgs e) {
             checkBox1.Checked = false;
             checkBox2.Checked = false;
             if (samplewin != null) {

@@ -5,18 +5,15 @@ using System.Text;
 using System.Threading.Tasks;
 using ZedGraph;
 
-namespace Grapher
-{
+namespace Grapher {
 
-    static class DataAnalysis
-    {
+    static class DataAnalysis {
 
         // Module
         // double[,] data: [numero pacchetto, (x,y,z)]
         // return modarr[numero pacchetto]: array di moduli
 
-        public static double[] ComputeModules(double[,] data)
-        {
+        public static double[] ComputeModules(double[,] data) {
             int size = data.GetLength(0);
 
             double[] modarr = new double[size];
@@ -28,16 +25,14 @@ namespace Grapher
             return modarr;
         }
 
-        private static double ComputeModule(double x, double y, double z)
-        {
+        private static double ComputeModule(double x, double y, double z) {
             return Math.Sqrt(Math.Pow(x, 2) + Math.Pow(y, 2) + Math.Pow(z, 2));
         }
 
         // Smoothing
         // return smoothed[pacchetto,sensore,tipo,(x,y,z,w)]
 
-        public static List<Packet> SmoothData(List<Packet> sampwin, int range)
-        {
+        public static List<Packet> SmoothData(List<Packet> sampwin, int range) {
             int size = sampwin.Count();
             int sensNum = sampwin.First().SensorsNumber;
 
@@ -93,8 +88,7 @@ namespace Grapher
         // Derivative
         // return modarr[pacchetto,sensore,tipo(0:acc,1:gyr)]
 
-        public static double[] ComputeDerivatives(double[] mod, int freq)
-        {
+        public static double[] ComputeDerivatives(double[] mod, int freq) {
             int size = mod.Count();
             double[] derivated = new double[size];
 
@@ -104,15 +98,13 @@ namespace Grapher
             return derivated;
         }
 
-        private static double ComputeDerivative(int freq, double v1, double v2)
-        {
+        private static double ComputeDerivative(int freq, double v1, double v2) {
             return (v1 - v2) / ((double)1 / freq);
         }
 
         // Standard Deviation
 
-        public static double[] ComputeStandardDeviations(double[] data, int range)
-        {
+        public static double[] ComputeStandardDeviations(double[] data, int range) {
             int size = data.Count();
             double[] derivated = new double[size];
 
@@ -142,8 +134,7 @@ namespace Grapher
             return derivated;
         }
 
-        public static double[] ComputeSquare(double[] data, int freq , double cutOff, double epsilon)
-        {
+        public static double[] ComputeSquare(double[] data, int freq, double cutOff, double epsilon) {
             int size = data.Count();
             double[] squared = new double[size];
             int initialState = 0;
@@ -167,7 +158,8 @@ namespace Grapher
                     if ((data[i] < cutOff && currentstate == 1) || (data[i] >= cutOff && currentstate == 2)) {
                         // non ce cambio, non faccio niente
                         squared[i] = squared[i - 1];
-                    } else {
+                    }
+                    else {
                         if (data[i] < cutOff) {
                             double den = 1 / (double)freq;
                             double rap = epsilon / den;
@@ -175,33 +167,35 @@ namespace Grapher
                             if (data[next] < cutOff) {
                                 squared[i] = data[next];
                                 currentstate = 1;
-                            } else {
+                            }
+                            else {
                                 squared[i] = squared[i - 1]; // falso moto
                             }
-                        } else {
+                        }
+                        else {
                             double den = 1 / (double)freq;
                             double rap = epsilon / den;
                             int next = (int)(i + (int)rap);
                             if (data[next] > cutOff) {
                                 squared[i] = data[next];
                                 currentstate = 2;
-                            } else {
+                            }
+                            else {
                                 squared[i] = squared[i - 1];
                             }
                         }
                     }
                 }
             }
-            for (int i = size - last; i < size; ++i ) {
-                squared[i] = squared[i-1];
+            for (int i = size - last; i < size; ++i) {
+                squared[i] = squared[i - 1];
             }
             return squared;
         }
 
         // Euler angles
 
-        public static double[,] RemoveDiscontinuities(double[,] data)
-        {
+        public static double[,] RemoveDiscontinuities(double[,] data) {
             int size = data.GetLength(0);
             int valueSize = data.GetLength(1);
 
@@ -224,8 +218,7 @@ namespace Grapher
             return cont;
         }
 
-        public static double[,] ComputeEulerAngles(double[,] data)
-        {
+        public static double[,] ComputeEulerAngles(double[,] data) {
 
             int size = data.GetLength(0);
 
@@ -253,8 +246,7 @@ namespace Grapher
             return euler;
         }
 
-        public static List<Packet> ComputeLowPass(List<Packet> sampwin)
-        {
+        public static List<Packet> ComputeLowPass(List<Packet> sampwin) {
             int size = sampwin.Count();
             int sensNum = sampwin.First().SensorsNumber;
 
@@ -299,8 +291,7 @@ namespace Grapher
             return lowfilter;
         }
 
-        private static double[] ComputeLowPass(double[] data, double[] prec, double a)
-        {
+        private static double[] ComputeLowPass(double[] data, double[] prec, double a) {
             int size = data.Count();
             double[] filteredValues = new double[size];
             for (int i = 0; i < size; i++) {
@@ -309,8 +300,7 @@ namespace Grapher
             return filteredValues;
         }
 
-        public static List<Packet> ComputeHighPass(List<Packet> sampwin)
-        {
+        public static List<Packet> ComputeHighPass(List<Packet> sampwin) {
             int size = sampwin.Count();
             int sensNum = sampwin.First().SensorsNumber;
 
@@ -355,8 +345,7 @@ namespace Grapher
             return lowfilter;
         }
 
-        private static double[] ComputeHighPass(double[] data, double[] prec, double a)
-        {
+        private static double[] ComputeHighPass(double[] data, double[] prec, double a) {
             int size = data.Count();
             double[] filteredValues = new double[size];
             for (int i = 0; i < size; i++) {
@@ -365,8 +354,7 @@ namespace Grapher
             return filteredValues;
         }
 
-        public static PointPairList ComputeDeadReckoning(double[,] q0, double[,] acc, double[,] mag, int freq, int win)
-        {
+        public static PointPairList ComputeDeadReckoning(double[,] q0, double[,] acc, double[,] mag, int freq, int win) {
 
             int size = q0.GetLength(0);
 
@@ -374,13 +362,11 @@ namespace Grapher
             double[,] eucont = RemoveDiscontinuities(euler);
 
             double[] theta = new double[size];
-            for (int i = 0; i < size; i++)
-            {
+            for (int i = 0; i < size; i++) {
                 theta[i] = eucont[i, 2];
             }
             double[] pitch = new double[size];
-            for (int i = 0; i < size; i++)
-            {
+            for (int i = 0; i < size; i++) {
                 pitch[i] = eucont[i, 1];
             }
 
@@ -396,16 +382,14 @@ namespace Grapher
 
             double[] accy = new double[size];
 
-            for (int i = 0; i < size; i++)
-            {
+            for (int i = 0; i < size; i++) {
                 accy[i] = acc[i, 1];
             }
 
             double[] magy = new double[size];
             double[] magz = new double[size];
 
-            for (int i = 0; i < size; i++)
-            {
+            for (int i = 0; i < size; i++) {
                 magy[i] = mag[i, 1];
                 magz[i] = mag[i, 2];
             }
@@ -415,19 +399,16 @@ namespace Grapher
             double[,] deg = RemoveDiscontinuities(FunzioneOrientamento(magy, magz));
 
             double theta1 = theta[0];
-            for (int i = 1; i < size; i++)
-            {
+            for (int i = 1; i < size; i++) {
 
                 v0 = dev[i];
-                if (moto[i] != "Fermo")
-                {
+                if (moto[i] != "Fermo") {
                     ds = v0 * t;
                 }
-                else
-                {
+                else {
                     ds = 0;
                 }
-                if (Math.Abs(theta1 - theta[i - 1]) > (Math.PI / 180 * deg[i,0]))
+                if (Math.Abs(theta1 - theta[i - 1]) > (Math.PI / 180 * deg[i, 0]))
                     theta1 = theta[i - 1];
                 //scomponimento dx lungo le sue componenti grazie all'angolo ecc
                 dx = ds * Math.Cos(theta1);
@@ -446,20 +427,17 @@ namespace Grapher
             return p;
         }
 
-        private static double[] SmoothSample(double[] data, int range)
-        {
+        private static double[] SmoothSample(double[] data, int range) {
             int size = data.Count();
             double[] smoothed = new double[size];
 
-            for (int p = 0; p < size; p++)
-            {
+            for (int p = 0; p < size; p++) {
                 int sx = Math.Max(0, p - range);
                 int dx = Math.Min(size - 1, p + range);
                 double winSize = dx - sx + 1;
                 double mean = 0;
 
-                for (int m = sx; m <= dx; m++)
-                {
+                for (int m = sx; m <= dx; m++) {
                     mean += data[m];
                 }
 
@@ -478,16 +456,14 @@ namespace Grapher
         //Funzione MotoStazionamento, ritorna un array di Stringhe contentente lo stato di moto di ogni singola rilevazione
         //"Fermo" oppure "In-Piedi"
 
-        public static String[] MotoStazionamento(double[,] providedData, int window)
-        {
+        public static String[] MotoStazionamento(double[,] providedData, int window) {
 
             double[] module = DataAnalysis.ComputeModules(providedData);
             double[] sd = DataAnalysis.ComputeStandardDeviations(module, window);
             double[] squared = DataAnalysis.ComputeSquare(sd, 50, 0.53, 0.4);
             int sd_size = sd.Count();
             String[] state = new String[sd_size];
-            for (int i = 0; i < sd_size; i++)
-            {
+            for (int i = 0; i < sd_size; i++) {
                 if (squared[i] <= 0.54)
                     state[i] = "Fermo";
                 else
@@ -499,12 +475,10 @@ namespace Grapher
         //FunzioneOrientamento prende in ingresso 2 array, corrispondenti all' asse y e z del magnetometro
         //restituisce il valore theta della variazione di angoli senza salti
 
-        public static double[,] FunzioneOrientamento(double[] y, double[] z)
-        {
+        public static double[,] FunzioneOrientamento(double[] y, double[] z) {
             int size = y.Count();
             double[,] theta = new double[size, 1];
-            for (int i = 0; i < size; i++)
-            {
+            for (int i = 0; i < size; i++) {
                 theta[i, 0] = Math.Atan(y[i] / z[i]);
             }
             return theta;
@@ -513,8 +487,7 @@ namespace Grapher
         //Girata prende in ingresso un array di due dimensioni [numero di pacchetto][asse x y z del magnetometro]
         //
 
-        public static double[] Girata(double[,] providedData)
-        {
+        public static double[] Girata(double[,] providedData) {
 
             int size = providedData.GetLength(0);
             double[,] thetaArray = new double[size, 1];
@@ -522,27 +495,23 @@ namespace Grapher
             double[] zArray = new double[size];
             double[] gradesArray = new double[size];
             double[] turnArray = new double[size];
-            for (int i = 0; i < size; i++)
-            {
+            for (int i = 0; i < size; i++) {
                 yArray[i] = providedData[i, 1];
                 zArray[i] = providedData[i, 2];
             }
 
             thetaArray = RemoveDiscontinuities(FunzioneOrientamento(yArray, zArray));
             //Pi:180 = theta: x;
-            for (int i = 0; i < size; i++)
-            {
+            for (int i = 0; i < size; i++) {
                 gradesArray[i] = 180 * thetaArray[i, 0] / Math.PI;
                 //gradesArray[i] = thetaArray[i, 0];
             }
-            for (int i = 1; i < size; i++)
-            {
+            for (int i = 1; i < size; i++) {
                 double diff = Math.Round((gradesArray[i] - gradesArray[i - 1]), MidpointRounding.AwayFromZero);
                 //double diff = Math.Round(thetaArray[i] - thetaArray[i - 1], MidpointRounding.AwayFromZero);
                 //girata sinistra
                 // 10 gradi = 0.15 radianti
-                if (diff >= 5 || diff < -5)
-                {
+                if (diff >= 5 || diff < -5) {
                     turnArray[i] = diff;
                 }
                 else turnArray[i] = 0;
@@ -556,22 +525,20 @@ namespace Grapher
         //perche' la x e' rivolta verso l' alto
         //Per convenzione mettiamo l' uguale nei minori
 
-        public static String[] LayStandSit(double[] providedData)
-        {
+        public static String[] LayStandSit(double[] providedData) {
 
             int size = providedData.Count();
             //double[] squared = DataAnalysis.ComputeSquare(providedData, 50, 0.7, 0.4);
-            double[] smoothed = SmoothSample(providedData, 20);
+            //double[] smoothed = SmoothSample(providedData, 20);
             String[] state = new String[size];
-            for (int i = 0; i < size; i++)
-            {
-                if (smoothed[i] <= 2.7)
+            for (int i = 0; i < size; i++) {
+                if (providedData[i] <= 2.7)
                     state[i] = "Sdraiato";
-                else if (smoothed[i] > 2.7 && smoothed[i] <= 3.7)
+                else if (providedData[i] > 2.7 && providedData[i] <= 3.7)
                     state[i] = "Sdraiato-Seduto";
-                else if (smoothed[i] > 3.7 && smoothed[i] <= 7.5)
+                else if (providedData[i] > 3.7 && providedData[i] <= 7.2)
                     state[i] = "Seduto";
-                else if (smoothed[i] > 7.5)
+                else if (providedData[i] > 7.2)
                     state[i] = "In-Piedi";
             }
             return state;

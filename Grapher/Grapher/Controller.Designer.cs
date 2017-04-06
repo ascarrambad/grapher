@@ -1,7 +1,5 @@
-﻿namespace Grapher
-{
-    partial class Controller
-    {
+﻿namespace Grapher {
+    partial class Controller {
         /// <summary>
         /// Required designer variable.
         /// </summary>
@@ -11,10 +9,8 @@
         /// Clean up any resources being used.
         /// </summary>
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (components != null))
-            {
+        protected override void Dispose(bool disposing) {
+            if (disposing && (components != null)) {
                 components.Dispose();
             }
             base.Dispose(disposing);
@@ -26,8 +22,7 @@
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent()
-        {
+        private void InitializeComponent() {
             this.components = new System.ComponentModel.Container();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.btn_console_clear = new System.Windows.Forms.Button();
@@ -430,7 +425,7 @@
             this.sensor_position.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.sensor_position.FormattingEnabled = true;
             this.sensor_position.Items.AddRange(new object[] {
-            "1 (bacino)",
+            "1 (Bacino)",
             "2 (Polso Dx)",
             "3 (Polso Sx)",
             "4 (Caviglia Dx)",
