@@ -1,6 +1,6 @@
 # grapher - Progetto C#
 
-## Struttura progetto:
+## Struttura progetto
 
 - **Form**: Classe controller
 - **DataProvider**: Acquisizione dati da Xbus
